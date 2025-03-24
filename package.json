@@ -1,0 +1,25 @@
+{
+  "name": "shopify-hubspot-sync",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Hadasa100/shopify-hubspot-sync.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Hadasa100/shopify-hubspot-sync/issues"
+  },
+  "homepage": "https://github.com/Hadasa100/shopify-hubspot-sync#readme",
+  "description": "",
+  "dependencies": {
+    "@hubspot/api-client": "^12.0.1",
+    "dotenv": "^16.4.7",
+    "node-fetch": "^3.3.2"
+  }
+}
