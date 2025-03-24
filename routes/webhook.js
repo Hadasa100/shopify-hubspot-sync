@@ -1,19 +1,36 @@
-const express = require('express');
+// routes/webhook.js
+import express from 'express';
+import { createOrUpdateHubSpotProduct, deleteHubSpotProduct } from '../lib/hubspot.js';
+import logger from '../utils/logger.js';
+
 const router = express.Router();
 
+// Webhook for creating/updating a product
 router.post('/product', express.json(), async (req, res) => {
-  console.log('🚀 Webhook hit!');
-  console.log('📦 Raw Body:', JSON.stringify(req.body, null, 2));
+  console.log('🚀 Webhook received for product create/update:');
+  console.log(JSON.stringify(req.body, null, 2));
 
   try {
-    // כאן תוכלי לקרוא לפונקציה שמעדכנת את HubSpot
-    // await createOrUpdateHubSpotProduct(req.body, console.log);
-
-    res.status(200).send('Webhook received!');
+    await createOrUpdateHubSpotProduct(req.body, logger);
+    res.status(200).send('Product create/update processed.');
   } catch (error) {
-    console.error('❌ Webhook Error:', error);
-    res.status(500).send('Error processing webhook');
+    console.error('❌ Error processing product:', error);
+    res.status(500).send('Error processing product webhook.');
   }
 });
 
-module.exports = router;
+// Webhook for deleting a product
+router.post('/product/delete', express.json(), async (req, res) => {
+  console.log('🚀 Webhook received for product deletion:');
+  console.log(JSON.stringify(req.body, null, 2));
+
+  try {
+    await deleteHubSpotProduct(req.body, logger);
+    res.status(200).send('Product deletion processed.');
+  } catch (error) {
+    console.error('❌ Error processing product deletion:', error);
+    res.status(500).send('Error processing product deletion webhook.');
+  }
+});
+
+export default router;

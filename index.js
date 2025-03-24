@@ -1,15 +1,18 @@
 // index.js
-require('dotenv').config();
-const express = require('express');
-const webhookRoutes = require('./routes/webhook');
+import dotenv from 'dotenv';
+import express from 'express';
+import webhookRoutes from './routes/webhook.js';
 
+dotenv.config();
 const app = express();
+
+// Middleware to parse JSON for all requests
 app.use(express.json());
 
-// Webhook route
+// Mount webhook routes for product operations
 app.use('/webhooks', webhookRoutes);
 
-// Health check
+// Health check endpoint
 app.get('/', (req, res) => {
   res.send('Shopify-HubSpot sync server is running.');
 });
