@@ -70,6 +70,6 @@ async function syncSpecificProducts() {
 //   syncSpecificProducts().catch(console.error);
 
 
-// syncAllProducts().catch(console.error);
+syncAllProducts().catch(console.error);
 
-deleteProductsWithoutSku().catch(console.error);
+// deleteProductsWithoutSku().catch(console.error);
