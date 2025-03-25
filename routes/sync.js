@@ -16,36 +16,50 @@ router.post('/skus', async (req, res) => {
   try {
     let { skus } = req.body;
     if (!skus) {
-      return res.status(400).json({ error: 'Please provide at least one SKU in the "skus" field.' });
+      return res.status(400).json({ error: 'Please provide at least one SKU.' });
     }
 
-    // Allow a single string or an array
-    if (!Array.isArray(skus)) {
-      skus = [skus];
+    // Convert skus to an array
+    if (typeof skus === 'string') {
+      skus = skus.trim().split(/\s+/);
     }
+    skus = skus.flatMap(sku => sku.trim().split(/\s+/));
+
+    // Create a helper that always calls logger with `res`
+    const localLogger = (message, showFrontend = false) => {
+      logger(res, message, showFrontend);
+    };
 
     for (const sku of skus) {
-      logger(`🔎 Looking up product with SKU: ${sku}`);
-      const shopifyProductId = await getShopifyProductBySKU(sku);
+      // Show this message to the user
+      localLogger(`🔎 Looking up product with SKU: ${sku}`, false);
 
+      const shopifyProductId = await getShopifyProductBySKU(sku);
       if (!shopifyProductId) {
-        logger(`❌ Could not find product for SKU: ${sku}`);
+        localLogger(`❌ Could not find product for SKU: ${sku}`, true);
         continue;
       }
+      localLogger(`🔄 Processing SKU: ${sku}`, false);
 
-      // createOrUpdateHubSpotProduct expects an object with `admin_graphql_api_id`
       await createOrUpdateHubSpotProduct(
         { admin_graphql_api_id: shopifyProductId },
-        logger
+        localLogger
       );
     }
 
-    res.status(200).json({ message: 'SKU sync complete.' });
+    localLogger('SKU sync complete!', true);
+    res.end();
   } catch (error) {
     console.error('❌ Error syncing SKUs:', error);
-    res.status(500).json({ error: 'An error occurred while syncing SKUs.' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'An error occurred while syncing SKUs.' });
+    } else {
+      res.write('❌ An error occurred while syncing SKUs.');
+      res.end();
+    }
   }
 });
+
 
 /**
  * POST /sync/all
