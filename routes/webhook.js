@@ -8,7 +8,6 @@ const router = express.Router();
 // Webhook for creating/updating a product
 router.post('/product', express.json(), async (req, res) => {
   console.log('🚀 Webhook received for product create/update:');
-  console.log(JSON.stringify(req.body, null, 2));
 
   try {
     await createOrUpdateHubSpotProduct(req.body, logger);
@@ -22,7 +21,6 @@ router.post('/product', express.json(), async (req, res) => {
 // Webhook for deleting a product
 router.post('/product/delete', express.json(), async (req, res) => {
   console.log('🚀 Webhook received for product deletion:');
-  console.log(JSON.stringify(req.body, null, 2));
 
   try {
     await deleteHubSpotProduct(req.body, logger);
