@@ -23,8 +23,9 @@ app.use('/webhooks', webhookRoutes);
 app.use('/sync', syncRoutes);
 
 // Health check
-app.get('/', (req, res) => {
-  res.send('Shopify-HubSpot sync server is running.');
+// Catch-all to serve React index.html
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'frontend', 'build', 'index.html'));
 });
 
 const PORT = process.env.PORT || 5000;
