@@ -1,27 +1,33 @@
-// index.js
 import dotenv from 'dotenv';
 import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
 import webhookRoutes from './routes/webhook.js';
-import syncRoutes from './routes/sync.js'; // <-- new
+import syncRoutes from './routes/sync.js';
+
+// Create __dirname in ES module context:
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config();
 const app = express();
 
-// Middleware to parse JSON
 app.use(express.json());
 
-// Webhook routes (Shopify will call these)
-app.use('/webhooks', webhookRoutes);
+// Serve static files from the React build folder
+app.use(express.static(path.join(__dirname, 'frontend', 'dist')));
 
-// Front-end sync routes (User can trigger manual sync)
+// Routes
+app.use('/webhooks', webhookRoutes);
 app.use('/sync', syncRoutes);
 
-// Health check endpoint
+// Health check
 app.get('/', (req, res) => {
   res.send('Shopify-HubSpot sync server is running.');
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
