@@ -127,7 +127,8 @@ router.post('/all', async (req, res) => {
  * Body: { startDate: "YYYY-MM-DD", endDate: "YYYY-MM-DD" }
  */
 router.post('/dates', async (req, res) => {
-  const log = createLogger(res);
+  // Pass false or remove the res parameter if not needed
+  const log = createLogger(res, false); 
   const failures = []; 
 
   try {
@@ -152,11 +153,12 @@ router.post('/dates', async (req, res) => {
       );
 
       for (const { node } of edges) {
-        log(`🔎 Processing product with SKU: ${node.sku || 'No SKU'}`);
+        const sku = node.variants?.edges?.[0]?.node?.sku || "";
+        log(`🔎 Processing product with SKU: ${sku || 'No SKU'}`);
         await createOrUpdateHubSpotProduct(
           { ...node, admin_graphql_api_id: node.id },
           log,
-          node.sku,
+          sku,
           failures
         );
         totalCount++;
@@ -170,21 +172,22 @@ router.post('/dates', async (req, res) => {
 
     log(`✅ Synced ${totalCount} products to HubSpot.`, true);
 
-    // After processing all date-range products, send one email if there are failures
     if (failures.length > 0) {
       await sendFailureEmail(failures);
     }
 
-    res.status(200).json({
+    // Final response sent only once
+    return res.status(200).json({
       message: `Synced ${totalCount} products to HubSpot.`,
       failedCount: failures.length,
     });
   } catch (error) {
     log(`❌ Error syncing products by date range: ${error.message}`);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'An error occurred while syncing products by date range.',
     });
   }
 });
+
 
 export default router;
