@@ -126,25 +126,38 @@ router.post('/all', async (req, res) => {
  * POST /sync/dates
  * Body: { startDate: "YYYY-MM-DD", endDate: "YYYY-MM-DD" }
  */
-router.post('/dates', async (req, res) => {
-  // Pass false or remove the res parameter if not needed
-  const log = createLogger(res, false); 
-  const failures = []; 
+router.get('/dates', async (req, res) => {
+  // Set up SSE headers
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  // Disable proxy buffering (if using something like Nginx)
+  res.setHeader('X-Accel-Buffering', 'no');
+  
+  // Flush headers immediately
+  res.flushHeaders();
+
+  const sendSSE = (data) => {
+    res.write(`data: ${data}\n\n`);
+    if (res.flush) {
+      res.flush();
+    }
+  };
+
+  const { startDate, endDate } = req.query;
+  if (!startDate || !endDate) {
+    sendSSE('❌ Please provide both startDate and endDate in the format YYYY-MM-DD.');
+    return res.end();
+  }
+
+  sendSSE(`🔁 Starting sync of products between ${startDate} and ${endDate}...`);
+
+  let totalCount = 0;
+  let failures = [];
+  let hasNextPage = true;
+  let afterCursor = null;
 
   try {
-    const { startDate, endDate } = req.body;
-    if (!startDate || !endDate) {
-      return res.status(400).json({
-        error: 'Please provide both startDate and endDate in the format YYYY-MM-DD.',
-      });
-    }
-
-    log(`🔁 Starting sync of products between ${startDate} and ${endDate}...`);
-
-    let totalCount = 0;
-    let hasNextPage = true;
-    let afterCursor = null;
-
     while (hasNextPage) {
       const { edges, pageInfo } = await getShopifyProductsByDateRange(
         startDate,
@@ -154,10 +167,10 @@ router.post('/dates', async (req, res) => {
 
       for (const { node } of edges) {
         const sku = node.variants?.edges?.[0]?.node?.sku || "";
-        log(`🔎 Processing product with SKU: ${sku || 'No SKU'}`);
+        sendSSE(`🔎 Processing product with SKU: ${sku || 'No SKU'}`);
         await createOrUpdateHubSpotProduct(
           { ...node, admin_graphql_api_id: node.id },
-          log,
+          (msg) => sendSSE(msg),
           sku,
           failures
         );
@@ -170,22 +183,23 @@ router.post('/dates', async (req, res) => {
       }
     }
 
-    log(`✅ Synced ${totalCount} products to HubSpot.`, true);
-
+    sendSSE(`✅ Synced ${totalCount} products to HubSpot.`);
     if (failures.length > 0) {
       await sendFailureEmail(failures);
     }
 
-    // Final response sent only once
-    return res.status(200).json({
+    // Final summary with prefix for client detection
+    sendSSE('FINAL:' + JSON.stringify({
       message: `Synced ${totalCount} products to HubSpot.`,
       failedCount: failures.length,
-    });
+    }));
+    return res.end();
   } catch (error) {
-    log(`❌ Error syncing products by date range: ${error.message}`);
-    return res.status(500).json({
+    sendSSE(`❌ Error syncing products by date range: ${error.message}`);
+    sendSSE('FINAL:' + JSON.stringify({
       error: 'An error occurred while syncing products by date range.',
-    });
+    }));
+    return res.end();
   }
 });
 

@@ -1,3 +1,4 @@
+// src/components/SyncByDateButton.js
 import React, { useState } from 'react';
 import { syncByDateRange } from '../services/syncService';
 import CustomButton from './CustomButton';
@@ -16,26 +17,26 @@ function SyncByDateButton({ setLogMessages }) {
   };
 
   return (
-    <div style={{ marginBottom: '20px' }}>
-      <div style={{ marginBottom: '10px' }}>
-        <label>
-          Start Date:{' '}
+    <div className="mb-4">
+      <div className="form-row mb-2">
+        <div className="col">
+          <label>Start Date:</label>
           <input
             type="date"
+            className="form-control"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
           />
-        </label>
-      </div>
-      <div style={{ marginBottom: '10px' }}>
-        <label>
-          End Date:{' '}
+        </div>
+        <div className="col">
+          <label>End Date:</label>
           <input
             type="date"
+            className="form-control"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
           />
-        </label>
+        </div>
       </div>
       <CustomButton onClick={handleSyncByDates}>
         Sync Products by Date

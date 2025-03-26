@@ -12,20 +12,19 @@ function SkuSyncForm({ setLogMessages }) {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '10px' }}>
-      <input
-        style={{
-          padding: '8px',
-          fontSize: '16px',
-          border: '1px solid #ccc',
-          borderRadius: '4px',
-        }}
-        type="text"
-        placeholder="Enter SKU(s) separated by space"
-        value={sku}
-        onChange={(e) => setSku(e.target.value)}
-      />
-      <CustomButton onClick={handleSyncSku}>Sync SKU</CustomButton>
+    <div className="mb-3">
+      <div className="form-group">
+        <input
+          type="text"
+          className="form-control"
+          placeholder="Enter SKU(s) separated by space"
+          value={sku}
+          onChange={(e) => setSku(e.target.value)}
+        />
+      </div>
+      <CustomButton onClick={handleSyncSku} className="mt-2">
+        Sync SKU
+      </CustomButton>
     </div>
   );
 }

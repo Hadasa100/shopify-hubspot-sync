@@ -10,7 +10,11 @@ function SyncAllButton({ setLogMessages }) {
   };
 
   return (
-    <CustomButton onClick={handleSyncAll}>Sync All Products</CustomButton>
+    <div className="mb-3">
+      <CustomButton onClick={handleSyncAll}>
+        Sync All Products
+      </CustomButton>
+    </div>
   );
 }
 

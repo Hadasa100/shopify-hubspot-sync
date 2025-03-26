@@ -50,43 +50,26 @@ export const syncSku = async (sku, setLogMessages) => {
     }
   };
   
-  export const syncByDateRange = async ({ startDate, endDate }, setLogMessages) => {
-    try {
-      const response = await fetch('/sync/dates', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ startDate, endDate }),
-      });
+  export const syncByDateRange = ({ startDate, endDate }, setLogMessages) => {
+    // Build URL with query parameters
+    const url = `/sync/dates?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`;
+    const evtSource = new EventSource(url);
   
-      // Process the streaming response if supported
-      if (response.body && response.body.getReader) {
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder('utf-8');
-        let done = false;
-        while (!done) {
-          const { value, done: doneReading } = await reader.read();
-          done = doneReading;
-          if (value) {
-            const chunk = decoder.decode(value);
-            setLogMessages((prev) => prev + chunk);
-          }
-        }
+    evtSource.onmessage = (event) => {
+      if (event.data.startsWith('FINAL:')) {
+        const finalData = JSON.parse(event.data.substring(6));
+        setLogMessages((prev) => prev + "\nFinal: " + (finalData.message || 'Completed.'));
+        evtSource.close();
       } else {
-        // Fallback in case streaming is not supported
-        if (response.ok) {
-          const data = await response.json();
-          setLogMessages(data.message || 'Sync completed successfully.');
-        } else {
-          const errorData = await response.json();
-          setLogMessages(errorData.error || 'An error occurred during sync.');
-        }
+        setLogMessages((prev) => prev + event.data + "\n");
       }
-    } catch (error) {
-      setLogMessages('An error occurred while syncing: ' + error.message);
+    };
+  
+    evtSource.onerror = (error) => {
+      setLogMessages((prev) => prev + "\nAn error occurred during syncByDateRange.");
       console.error(error);
-    }
+      evtSource.close();
+    };
   };
   
   

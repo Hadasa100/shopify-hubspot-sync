@@ -1,21 +1,9 @@
 // src/components/CustomButton.js
 import React from 'react';
 
-const CustomButton = ({ children, onClick, style, ...props }) => {
-  const baseStyle = {
-    padding: '8px 16px',
-    fontSize: '16px',
-    backgroundColor: '#007BFF', // unified color for all buttons
-    color: '#fff',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    marginBottom: '10px',
-    ...style, // allows additional styling if needed
-  };
-
+const CustomButton = ({ children, onClick, className = '', ...props }) => {
   return (
-    <button style={baseStyle} onClick={onClick} {...props}>
+    <button className={`btn btn-primary ${className}`} onClick={onClick} {...props}>
       {children}
     </button>
   );
