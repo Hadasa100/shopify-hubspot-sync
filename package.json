@@ -27,6 +27,7 @@
     "@ngrok/ngrok": "^1.4.1",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "json2csv": "^6.0.0-alpha.2",
     "lucide-react": "^0.484.0",
     "node-fetch": "^3.3.2",
     "nodemailer": "^6.10.0",

@@ -1,10 +1,9 @@
-// routes/sync.js
 import express from 'express';
 import { createOrUpdateHubSpotProduct } from '../lib/hubspot.js';
 import {
   getShopifyProductBySKU,
   getShopifyProducts,
-  getShopifyProductsByDateRange
+  getShopifyProductsByDateRange,
 } from '../lib/shopify.js';
 import logger from '../utils/logger.js';
 import { sendFailureEmail } from '../lib/email.js';
@@ -24,7 +23,7 @@ const createLogger = (res) => (message, showFrontend = false) => {
  */
 router.post('/skus', async (req, res) => {
   const log = createLogger(res);
-  const failures = [];
+  const failures = []; 
 
   try {
     let { skus } = req.body;
@@ -33,7 +32,7 @@ router.post('/skus', async (req, res) => {
     }
     // Normalize to array of SKU strings
     skus = Array.isArray(skus)
-      ? skus.flatMap(sku => sku.trim().split(/\s+/))
+      ? skus.flatMap((sku) => sku.trim().split(/\s+/))
       : skus.trim().split(/\s+/);
 
     for (const sku of skus) {
@@ -41,16 +40,21 @@ router.post('/skus', async (req, res) => {
       const shopifyProductId = await getShopifyProductBySKU(sku);
       if (!shopifyProductId) {
         log(`❌ Could not find product for SKU: ${sku}`, true);
-        // Optionally push failure here as well
         failures.push({ sku, reason: 'Product not found in Shopify' });
         continue;
       }
       log(`🔄 Processing SKU: ${sku}`);
-      await createOrUpdateHubSpotProduct({ admin_graphql_api_id: shopifyProductId }, log, sku, failures);
+      await createOrUpdateHubSpotProduct(
+        { admin_graphql_api_id: shopifyProductId },
+        log,
+        sku,
+        failures
+      );
     }
+
     log('SKU sync complete!', true);
 
-    // Send one email with all failures (if any)
+    // After processing all SKUs, send one email if there are failures
     if (failures.length > 0) {
       await sendFailureEmail(failures);
     }
@@ -72,6 +76,8 @@ router.post('/skus', async (req, res) => {
  */
 router.post('/all', async (req, res) => {
   const log = createLogger(res);
+  const failures = []; 
+
   try {
     log('🔁 Starting sync of all products...', true);
     let totalCount = 0;
@@ -80,21 +86,36 @@ router.post('/all', async (req, res) => {
 
     while (hasNextPage) {
       const { edges, pageInfo } = await getShopifyProducts(afterCursor);
+
       for (const { node } of edges) {
+        log(`🔎 Processing product with SKU: ${node.sku || 'No SKU'}`);
+        // Pass 'failures' so createOrUpdateHubSpotProduct can push errors
         await createOrUpdateHubSpotProduct(
           { ...node, admin_graphql_api_id: node.id },
           log,
-          node.sku
+          node.sku,
+          failures
         );
         totalCount++;
       }
+
       hasNextPage = pageInfo.hasNextPage;
       if (hasNextPage && edges.length) {
         afterCursor = edges[edges.length - 1].cursor;
       }
     }
+
     log(`✅ Synced ${totalCount} products to HubSpot.`, true);
-    res.status(200).json({ message: `Synced ${totalCount} products to HubSpot.` });
+
+    // Send one email with all failures (if any)
+    if (failures.length > 0) {
+      await sendFailureEmail(failures);
+    }
+
+    res.status(200).json({
+      message: `Synced ${totalCount} products to HubSpot.`,
+      failedCount: failures.length,
+    });
   } catch (error) {
     console.error('❌ Error syncing all products:', error);
     res.status(500).json({ error: 'An error occurred while syncing all products.' });
@@ -107,35 +128,40 @@ router.post('/all', async (req, res) => {
  */
 router.post('/dates', async (req, res) => {
   const log = createLogger(res);
+  const failures = []; 
+
   try {
     const { startDate, endDate } = req.body;
     if (!startDate || !endDate) {
-      return res.status(400).json({ error: 'Please provide both startDate and endDate in the format YYYY-MM-DD.' });
+      return res.status(400).json({
+        error: 'Please provide both startDate and endDate in the format YYYY-MM-DD.',
+      });
     }
-    
+
     log(`🔁 Starting sync of products between ${startDate} and ${endDate}...`);
 
     let totalCount = 0;
     let hasNextPage = true;
     let afterCursor = null;
-    const syncErrors = [];
 
     while (hasNextPage) {
-      const { edges, pageInfo } = await getShopifyProductsByDateRange(startDate, endDate, afterCursor);
+      const { edges, pageInfo } = await getShopifyProductsByDateRange(
+        startDate,
+        endDate,
+        afterCursor
+      );
+
       for (const { node } of edges) {
-        log(`🔎 Processing product with SKU: ${node.sku}`);
-        try {
-          await createOrUpdateHubSpotProduct(
-            { ...node, admin_graphql_api_id: node.id },
-            log,
-            node.sku
-          );
-          totalCount++;
-        } catch (error) {
-          log(`❌ Failed to sync product with SKU ${node.sku}: ${error.message}`);
-          syncErrors.push(`Failed to sync product with SKU ${node.sku}: ${error.message}`);
-        }
+        log(`🔎 Processing product with SKU: ${node.sku || 'No SKU'}`);
+        await createOrUpdateHubSpotProduct(
+          { ...node, admin_graphql_api_id: node.id },
+          log,
+          node.sku,
+          failures
+        );
+        totalCount++;
       }
+
       hasNextPage = pageInfo.hasNextPage;
       if (hasNextPage && edges.length) {
         afterCursor = edges[edges.length - 1].cursor;
@@ -143,10 +169,21 @@ router.post('/dates', async (req, res) => {
     }
 
     log(`✅ Synced ${totalCount} products to HubSpot.`, true);
-    res.status(200).json({ message: `Synced ${totalCount} products to HubSpot.`, failedSyncs: syncErrors.length });
+
+    // After processing all date-range products, send one email if there are failures
+    if (failures.length > 0) {
+      await sendFailureEmail(failures);
+    }
+
+    res.status(200).json({
+      message: `Synced ${totalCount} products to HubSpot.`,
+      failedCount: failures.length,
+    });
   } catch (error) {
     log(`❌ Error syncing products by date range: ${error.message}`);
-    res.status(500).json({ error: 'An error occurred while syncing products by date range.' });
+    res.status(500).json({
+      error: 'An error occurred while syncing products by date range.',
+    });
   }
 });
 
