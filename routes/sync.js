@@ -86,14 +86,14 @@ router.post('/all', async (req, res) => {
 
     while (hasNextPage) {
       const { edges, pageInfo } = await getShopifyProducts(afterCursor);
-
       for (const { node } of edges) {
-        log(`🔎 Processing product with SKU: ${node.sku || 'No SKU'}`);
+        const sku = node.variants?.edges?.[0]?.node?.sku || "";
+        log(`🔎 Processing product with SKU: ${sku || 'No SKU'}`);
         // Pass 'failures' so createOrUpdateHubSpotProduct can push errors
         await createOrUpdateHubSpotProduct(
           { ...node, admin_graphql_api_id: node.id },
           log,
-          node.sku,
+          sku,
           failures
         );
         totalCount++;
