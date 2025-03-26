@@ -43,7 +43,7 @@ router.post('/skus', async (req, res) => {
 
       await createOrUpdateHubSpotProduct(
         { admin_graphql_api_id: shopifyProductId },
-        localLogger
+        localLogger, sku
       );
     }
 

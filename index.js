@@ -16,7 +16,7 @@ const app = express();
 app.use(express.json());
 
 // Serve static files from the React build folder
-app.use(express.static(path.join(__dirname, 'frontend', 'dist')));
+app.use(express.static(path.join(__dirname, 'frontend', 'build')));
 
 // Routes
 app.use('/webhooks', webhookRoutes);
