@@ -59,15 +59,34 @@ export const syncSku = async (sku, setLogMessages) => {
         },
         body: JSON.stringify({ startDate, endDate }),
       });
-      if (response.ok) {
-        const data = await response.json();
-        setLogMessages(data.message || 'Sync completed successfully.');
+  
+      // Process the streaming response if supported
+      if (response.body && response.body.getReader) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let done = false;
+        while (!done) {
+          const { value, done: doneReading } = await reader.read();
+          done = doneReading;
+          if (value) {
+            const chunk = decoder.decode(value);
+            setLogMessages((prev) => prev + chunk);
+          }
+        }
       } else {
-        const errorData = await response.json();
-        setLogMessages(errorData.error || 'An error occurred during sync.');
+        // Fallback in case streaming is not supported
+        if (response.ok) {
+          const data = await response.json();
+          setLogMessages(data.message || 'Sync completed successfully.');
+        } else {
+          const errorData = await response.json();
+          setLogMessages(errorData.error || 'An error occurred during sync.');
+        }
       }
     } catch (error) {
       setLogMessages('An error occurred while syncing: ' + error.message);
+      console.error(error);
     }
-  }
+  };
+  
   
