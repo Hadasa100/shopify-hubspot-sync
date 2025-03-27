@@ -74,7 +74,12 @@ router.post('/all', async (req, res) => {
   const log = createLogger(res);
   const failures = [];
 
-  // הסרנו את isCancelled וכל req.on('close')
+  let isCancelled = false;
+
+  req.on('close', () => {
+    isCancelled = true;
+    console.log('❌ Client disconnected. Aborting sync.');
+  });
 
   try {
     log('🔁 Starting sync of all products...', true);
@@ -83,8 +88,12 @@ router.post('/all', async (req, res) => {
     let afterCursor = null;
 
     while (hasNextPage) {
+      if (isCancelled || res.writableEnded) break;
+
       const { edges, pageInfo } = await getShopifyProducts(afterCursor);
       for (const { node } of edges) {
+        if (isCancelled || res.writableEnded) break;
+
         const sku = node.variants?.edges?.[0]?.node?.sku || '';
         log(`🔎 Processing product with SKU: ${sku || 'No SKU'}`);
 
@@ -103,6 +112,15 @@ router.post('/all', async (req, res) => {
       }
     }
 
+    if (isCancelled || res.writableEnded) {
+      log('⛔ Sync cancelled by user.', true);
+      log('--- END LOG ---', true);
+      if (!res.writableEnded) {
+        return res.end();
+      }
+      return;
+    }
+
     log(`✅ Synced ${totalCount} products to HubSpot.`, true);
 
     if (failures.length > 0) {
@@ -110,15 +128,20 @@ router.post('/all', async (req, res) => {
     }
 
     log('--- END LOG ---', true);
-    res.end();
+    if (!res.writableEnded) {
+      res.end(); 
+    }
 
   } catch (error) {
     console.error('❌ Error syncing all products:', error);
-    log('❌ An error occurred while syncing all products.', true);
-    log('--- END LOG ---', true);
-    res.end();
+    if (!res.writableEnded) {
+      log('❌ An error occurred while syncing all products.', true);
+      log('--- END LOG ---', true);
+      res.end(); 
+    }
   }
 });
+
 
 
 
