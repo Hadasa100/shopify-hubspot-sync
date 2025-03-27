@@ -18,9 +18,10 @@ function SkuSyncForm({ setLogMessages, setIsLoading, onSyncFinish }) {
 
   return (
     <div className="mb-4">
-      <input
+      <textarea
+        rows="4"
         type="text"
-        className="form-control mb-4"
+        className="form-control mb-4 w-full"
         placeholder="Enter SKU(s) separated by space"
         value={sku}
         onChange={(e) => setSku(e.target.value)}
