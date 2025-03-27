@@ -7,9 +7,8 @@ function SyncAllButton({ setLogMessages, setIsLoading, onSyncFinish, setAbortCon
     setIsLoading(true);
 
     const controller = new AbortController();
-    setAbortController(controller); // ✅ שמירת ה־controller כדי שאפשר יהיה לבטל
-
-    await syncAll(setLogMessages, controller.signal); // ✅ שליחת ה־signal ל-fetch
+    setAbortController(controller); 
+    await syncAll(setLogMessages, controller.signal); 
 
     setIsLoading(false);
     onSyncFinish?.();

@@ -76,6 +76,8 @@ router.post('/all', async (req, res) => {
 
   let isCancelled = false;
 
+  console.log('🌐 Client connected to /sync/all');
+
   req.on('close', () => {
     isCancelled = true;
     console.log('❌ Client disconnected. Aborting sync.');
@@ -83,19 +85,38 @@ router.post('/all', async (req, res) => {
 
   try {
     log('🔁 Starting sync of all products...', true);
+    console.log('⏳ Fetching products from Shopify...');
+
+    // 🟢 Keep-alive ping every 10 seconds
+    const keepAliveInterval = setInterval(() => {
+      if (!res.writableEnded) {
+        res.write('🟢 keep-alive\n');
+      }
+    }, 10000);
+
     let totalCount = 0;
     let hasNextPage = true;
     let afterCursor = null;
 
     while (hasNextPage) {
-      if (isCancelled || res.writableEnded) break;
+      console.log(`🔄 hasNextPage: ${hasNextPage}, cursor: ${afterCursor}`);
+      // if (isCancelled || res.writableEnded) {
+      //   console.log('🛑 Cancelled mid-loop - breaking...');
+      //   break;
+      // }
 
       const { edges, pageInfo } = await getShopifyProducts(afterCursor);
+      console.log(`📦 Fetched ${edges.length} products`);
+
       for (const { node } of edges) {
-        if (isCancelled || res.writableEnded) break;
+        // if (isCancelled || res.writableEnded) {
+        //   console.log('🛑 Cancelled inside product loop - breaking...');
+        //   break;
+        // }
 
         const sku = node.variants?.edges?.[0]?.node?.sku || '';
         log(`🔎 Processing product with SKU: ${sku || 'No SKU'}`);
+        console.log(`⚙️ Syncing product: ${sku}`);
 
         await createOrUpdateHubSpotProduct(
           { ...node, admin_graphql_api_id: node.id },
@@ -103,6 +124,7 @@ router.post('/all', async (req, res) => {
           sku,
           failures
         );
+
         totalCount++;
       }
 
@@ -112,35 +134,41 @@ router.post('/all', async (req, res) => {
       }
     }
 
+    clearInterval(keepAliveInterval);
+
     if (isCancelled || res.writableEnded) {
       log('⛔ Sync cancelled by user.', true);
       log('--- END LOG ---', true);
       if (!res.writableEnded) {
+        console.log('📤 Ending response after cancellation');
         return res.end();
       }
       return;
     }
 
     log(`✅ Synced ${totalCount} products to HubSpot.`, true);
-
     if (failures.length > 0) {
       await sendFailureEmail(failures);
     }
 
     log('--- END LOG ---', true);
     if (!res.writableEnded) {
-      res.end(); 
+      console.log('📤 Ending response after success');
+      res.end();
     }
 
   } catch (error) {
     console.error('❌ Error syncing all products:', error);
+    clearInterval(keepAliveInterval);
     if (!res.writableEnded) {
       log('❌ An error occurred while syncing all products.', true);
       log('--- END LOG ---', true);
-      res.end(); 
+      res.end();
     }
   }
 });
+
+
 
 
 

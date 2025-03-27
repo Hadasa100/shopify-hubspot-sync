@@ -23,7 +23,7 @@ function HomePage() {
           <Link to="/sync-sku" className="glow-btn">Sync by Product SKUs</Link>
           <Link to="/sync-all" className="glow-btn">Sync All Products</Link>
           <Link to="/sync-dates" className="glow-btn">Sync Product by Dates</Link>
-          <a href="https://leibish.com" target="_blank" rel="noopener noreferrer" className="glow-btn">Live Project</a>
+          <a href="https://app.hubspot.com/contacts/49511833/objects/0-7/views/all/list" target="_blank" rel="noopener noreferrer" className="glow-btn">All HP Products</a>
         </div>
 
         {/* Footer */}

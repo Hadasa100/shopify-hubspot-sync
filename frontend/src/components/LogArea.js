@@ -1,23 +1,28 @@
 // src/components/LogArea.js
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 function LogArea({ logMessages }) {
-  const logLines = logMessages.split(/\r?\n/).filter(line => line.trim() !== '');
-  
+  const logEndRef = useRef(null);
+
+  // Split log messages on newlines but do NOT remove empty lines:
+  const logLines = logMessages.split(/\r?\n/);
+
+  // Automatically scroll to the bottom when new logs come in
+  useEffect(() => {
+    logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [logMessages]);
+
   return (
-    <div className="card">
-      <div className="card-header">
-        Logs
-      </div>
-      <div className="card-body" style={{ height: '400px', overflowY: 'auto' }}>
-        <ul className="list-group list-group-flush">
-          {logLines.map((line, index) => (
-            <li key={index} className="list-group-item">
-              {line}
-            </li>
-          ))}
-        </ul>
-      </div>
+    <div className="bg-white/5 rounded-md p-4 max-h-[400px] overflow-y-auto">
+      <h3 className="text-lg font-semibold mb-2 text-pink-400">📋 Live Sync Logs</h3>
+      <ul className="space-y-1 font-mono text-sm text-white/90">
+        {logLines.map((line, index) => (
+          <li key={index} className="border-b border-white/10 pb-1">
+            {line}
+          </li>
+        ))}
+        <li ref={logEndRef}></li>
+      </ul>
     </div>
   );
 }
