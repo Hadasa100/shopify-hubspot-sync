@@ -178,31 +178,24 @@ router.post('/all', async (req, res) => {
  * Body: { startDate: "YYYY-MM-DD", endDate: "YYYY-MM-DD" }
  */
 router.get('/dates', async (req, res) => {
-  // Set up SSE headers
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
-  // Disable proxy buffering (if using something like Nginx)
   res.setHeader('X-Accel-Buffering', 'no');
-  
-  // Flush headers immediately
   res.flushHeaders();
 
-  const sendSSE = (data) => {
-    console.log('📡 Sending SSE:', data);
-    res.write(`data: ${data}\n\n`);
-    if (res.flush) {
-      res.flush();
-    }
+  const log = (msg, showFrontend = true) => {
+    if (res.writableEnded) return;
+    logger(res, msg, showFrontend);
   };
 
   const { startDate, endDate } = req.query;
   if (!startDate || !endDate) {
-    sendSSE('❌ Please provide both startDate and endDate in the format YYYY-MM-DD.');
+    log('❌ Please provide both startDate and endDate in the format YYYY-MM-DD.');
     return res.end();
   }
 
-  sendSSE(`🔁 Starting sync of products between ${startDate} and ${endDate}...`);
+  log(`🔁 Starting sync of products between ${startDate} and ${endDate}...`, true);
 
   let totalCount = 0;
   let failures = [];
@@ -211,18 +204,16 @@ router.get('/dates', async (req, res) => {
 
   try {
     while (hasNextPage) {
-      const { edges, pageInfo } = await getShopifyProductsByDateRange(
-        startDate,
-        endDate,
-        afterCursor
-      );
+      const { edges, pageInfo } = await getShopifyProductsByDateRange(startDate, endDate, afterCursor);
+
+      log(`📦 Fetched ${edges.length} products`);
 
       for (const { node } of edges) {
         const sku = node.variants?.edges?.[0]?.node?.sku || "";
-        sendSSE(`🔎 Processing product with SKU: ${sku || 'No SKU'}`);
+        log(`🔎 Processing product with SKU: ${sku || 'No SKU'}`);
         await createOrUpdateHubSpotProduct(
           { ...node, admin_graphql_api_id: node.id },
-          (msg) => sendSSE(msg),
+          (msg) => log(msg),
           sku,
           failures
         );
@@ -235,25 +226,25 @@ router.get('/dates', async (req, res) => {
       }
     }
 
-    sendSSE(`✅ Synced ${totalCount} products to HubSpot.`);
+    log(`✅ Synced ${totalCount} products to HubSpot.`);
+
     if (failures.length > 0) {
       await sendFailureEmail(failures);
     }
 
-    // Final summary with prefix for client detection
-    sendSSE('FINAL:' + JSON.stringify({
-      message: `Synced ${totalCount} products to HubSpot.`,
-      failedCount: failures.length,
-    }));
-    return res.end();
+    log('--- END LOG ---');
+    if (!res.writableEnded) {
+      res.write(`data: FINAL:${JSON.stringify({ message: `Synced ${totalCount} products to HubSpot.`, failedCount: failures.length })}\n\n`);
+      res.end();
+    }
   } catch (error) {
-    sendSSE(`❌ Error syncing products by date range: ${error.message}`);
-    sendSSE('FINAL:' + JSON.stringify({
-      error: 'An error occurred while syncing products by date range.',
-    }));
-    return res.end();
+    log(`❌ Error syncing products by date range: ${error.message}`);
+    log('--- END LOG ---');
+    res.write(`data: FINAL:${JSON.stringify({ error: 'An error occurred while syncing products by date range.' })}\n\n`);
+    res.end();
   }
 });
+
 
 
 export default router;
