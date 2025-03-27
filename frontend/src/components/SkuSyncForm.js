@@ -1,41 +1,33 @@
 // src/components/SkuSyncForm.js
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { syncSku } from '../services/syncService';
-import CustomButton from './CustomButton';
 
-function SkuSyncForm({ setLogMessages, setIsLoading }) {
+function SkuSyncForm({ setLogMessages, setIsLoading, onSyncFinish }) {
   const [sku, setSku] = useState('');
-  const navigate = useNavigate();
 
   const handleSyncSku = async () => {
     setLogMessages('');
     setIsLoading(true);
 
-    // Navigate immediately
-    navigate('/logs');
-
     // Run the sync
     await syncSku(sku, setLogMessages);
 
-    // Stop spinner
     setIsLoading(false);
+    onSyncFinish?.(); // Call this callback if provided
   };
 
   return (
-    <div className="mb-3">
-      <div className="form-group">
-        <input
-          type="text"
-          className="form-control"
-          placeholder="Enter SKU(s) separated by space"
-          value={sku}
-          onChange={(e) => setSku(e.target.value)}
-        />
-      </div>
-      <CustomButton onClick={handleSyncSku} className="mt-2">
+    <div className="mb-4">
+      <input
+        type="text"
+        className="form-control mb-4"
+        placeholder="Enter SKU(s) separated by space"
+        value={sku}
+        onChange={(e) => setSku(e.target.value)}
+      />
+      <button onClick={handleSyncSku} className="glow-btn w-full">
         Sync SKU
-      </CustomButton>
+      </button>
     </div>
   );
 }

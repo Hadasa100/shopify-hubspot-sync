@@ -1,13 +1,9 @@
-// src/components/SyncByDateButton.js
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { syncByDateRange } from '../services/syncService';
-import CustomButton from './CustomButton';
 
-function SyncByDateButton({ setLogMessages, setIsLoading }) {
+function SyncByDateButton({ setLogMessages, setIsLoading, onSyncFinish }) {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const navigate = useNavigate();
 
   const handleSyncByDates = async () => {
     setLogMessages('');
@@ -15,43 +11,40 @@ function SyncByDateButton({ setLogMessages, setIsLoading }) {
       setLogMessages('Please provide both start and end dates.');
       return;
     }
+
     setIsLoading(true);
 
-    // Navigate right away
-    navigate('/logs');
-
-    // Run sync
     await syncByDateRange({ startDate, endDate }, setLogMessages);
 
-    // Stop spinner
     setIsLoading(false);
+    onSyncFinish?.();
   };
 
   return (
     <div className="mb-4">
-      <div className="form-row mb-2">
-        <div className="col">
-          <label>Start Date:</label>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label className="block text-sm mb-1">Start Date:</label>
           <input
             type="date"
-            className="form-control"
+            className="form-control w-full"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
           />
         </div>
-        <div className="col">
-          <label>End Date:</label>
+        <div>
+          <label className="block text-sm mb-1">End Date:</label>
           <input
             type="date"
-            className="form-control"
+            className="form-control w-full"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
           />
         </div>
       </div>
-      <CustomButton onClick={handleSyncByDates}>
+      <button onClick={handleSyncByDates} className="glow-btn w-full">
         Sync Products by Date
-      </CustomButton>
+      </button>
     </div>
   );
 }

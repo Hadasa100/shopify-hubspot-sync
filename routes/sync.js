@@ -70,13 +70,11 @@ router.post('/skus', async (req, res) => {
   }
 });
 
-/**
- * POST /sync/all
- * Fetch all products from Shopify and sync each to HubSpot.
- */
 router.post('/all', async (req, res) => {
   const log = createLogger(res);
-  const failures = []; 
+  const failures = [];
+
+  // הסרנו את isCancelled וכל req.on('close')
 
   try {
     log('🔁 Starting sync of all products...', true);
@@ -87,9 +85,9 @@ router.post('/all', async (req, res) => {
     while (hasNextPage) {
       const { edges, pageInfo } = await getShopifyProducts(afterCursor);
       for (const { node } of edges) {
-        const sku = node.variants?.edges?.[0]?.node?.sku || "";
+        const sku = node.variants?.edges?.[0]?.node?.sku || '';
         log(`🔎 Processing product with SKU: ${sku || 'No SKU'}`);
-        // Pass 'failures' so createOrUpdateHubSpotProduct can push errors
+
         await createOrUpdateHubSpotProduct(
           { ...node, admin_graphql_api_id: node.id },
           log,
@@ -107,20 +105,22 @@ router.post('/all', async (req, res) => {
 
     log(`✅ Synced ${totalCount} products to HubSpot.`, true);
 
-    // Send one email with all failures (if any)
     if (failures.length > 0) {
       await sendFailureEmail(failures);
     }
 
-    res.status(200).json({
-      message: `Synced ${totalCount} products to HubSpot.`,
-      failedCount: failures.length,
-    });
+    log('--- END LOG ---', true);
+    res.end();
+
   } catch (error) {
     console.error('❌ Error syncing all products:', error);
-    res.status(500).json({ error: 'An error occurred while syncing all products.' });
+    log('❌ An error occurred while syncing all products.', true);
+    log('--- END LOG ---', true);
+    res.end();
   }
 });
+
+
 
 /**
  * POST /sync/dates
@@ -138,6 +138,7 @@ router.get('/dates', async (req, res) => {
   res.flushHeaders();
 
   const sendSSE = (data) => {
+    console.log('📡 Sending SSE:', data);
     res.write(`data: ${data}\n\n`);
     if (res.flush) {
       res.flush();

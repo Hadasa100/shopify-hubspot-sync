@@ -1,31 +1,25 @@
-// src/components/SyncAllButton.js
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { syncAll } from '../services/syncService';
-import CustomButton from './CustomButton';
 
-function SyncAllButton({ setLogMessages, setIsLoading }) {
-  const navigate = useNavigate();
-
+function SyncAllButton({ setLogMessages, setIsLoading, onSyncFinish, setAbortController }) {
   const handleSyncAll = async () => {
     setLogMessages('');
     setIsLoading(true);
 
-    // Immediately navigate to logs page
-    navigate('/logs');
+    const controller = new AbortController();
+    setAbortController(controller); // ✅ שמירת ה־controller כדי שאפשר יהיה לבטל
 
-    // Perform the sync in the background
-    await syncAll(setLogMessages);
+    await syncAll(setLogMessages, controller.signal); // ✅ שליחת ה־signal ל-fetch
 
-    // Once the sync is done, turn off spinner
     setIsLoading(false);
+    onSyncFinish?.();
   };
 
   return (
-    <div className="mb-3">
-      <CustomButton onClick={handleSyncAll}>
+    <div className="mb-4">
+      <button onClick={handleSyncAll} className="glow-btn w-full">
         Sync All Products
-      </CustomButton>
+      </button>
     </div>
   );
 }

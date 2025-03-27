@@ -25,30 +25,40 @@ export const syncSku = async (sku, setLogMessages) => {
     }
   };
   
-  export const syncAll = async (setLogMessages) => {
+  export const syncAll = async (setLogMessages, signal) => {
     try {
       const response = await fetch('/sync/all', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal,
       });
   
-      // Process the streaming response like syncSku
+      console.log(response)
       const reader = response.body.getReader();
       const decoder = new TextDecoder('utf-8');
       let done = false;
+  
       while (!done) {
         const { value, done: doneReading } = await reader.read();
         done = doneReading;
-        if (value) {
-          const chunk = decoder.decode(value);
+        const chunk = decoder.decode(value || new Uint8Array()); // ← הגנה קטנה
+      
+        if (chunk) {
           setLogMessages((prev) => prev + chunk);
         }
       }
+      
     } catch (error) {
-      setLogMessages('An error occurred while syncing all products.');
-      console.error(error);
+      if (error.name === 'AbortError') {
+        setLogMessages('Sync cancelled by user.');
+      } else {
+        setLogMessages('An error occurred while syncing all products.');
+        console.error(error);
+      }
     }
   };
+  
+  
   
   export const syncByDateRange = ({ startDate, endDate }, setLogMessages) => {
     const url = `/sync/dates?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`;

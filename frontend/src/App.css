@@ -1,63 +1,183 @@
-/* General container styling */
+/* === Global Reset / Base Styles === */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  /* Dark background with subtle radial gradient */
+  background: #0e0b0f;
+  background: radial-gradient(
+    circle at 30% 50%,
+    rgba(214, 49, 210, 0.2),
+    rgba(31, 0, 46, 0.8),
+    #0e0b0f 90%
+  );
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  min-height: 100vh;
+}
+
+/* === Container / Layout === */
 .container {
-  background-color: #f9f9f9;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 3rem 1rem;
+  text-align: center;
 }
 
-/* Header styling */
-h1 {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+/* Headings */
+h1, h2, h3 {
+  text-transform: uppercase;
+  letter-spacing: 2px;
   font-weight: 600;
-  color: #333;
+  margin-bottom: 2rem;
 }
 
-/* Card styling */
+/* === Cards === */
 .card {
+  background: rgba(255, 255, 255, 0.06); /* Semi-transparent overlay */
   border: none;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  background-color: #fff;
+  border-radius: 8px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  backdrop-filter: blur(6px);
 }
 
 .card-header {
-  background-color: #007bff;
+  background: transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 1rem;
+  font-weight: 600;
+  font-size: 1.25rem;
+  text-transform: uppercase;
+}
+
+.card-body {
+  background: transparent;
   color: #fff;
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
-  font-weight: 500;
 }
 
-/* Button enhancements */
-.btn-primary {
-  background: linear-gradient(45deg, #007bff, #00c6ff);
+/* === Lists (Logs) === */
+.list-group-item {
+  background: transparent;
   border: none;
-  border-radius: 5px;
-  transition: background 0.3s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
 }
 
-.btn-primary:hover {
-  background: linear-gradient(45deg, #006ae0, #00b5e0);
+/* === Forms & Inputs === */
+.form-group label {
+  display: block;
+  text-align: left;
+  margin-bottom: 0.5rem;
 }
 
-/* Form input styling */
 .form-control {
-  border-radius: 5px;
-  border: 1px solid #ced4da;
-  box-shadow: none;
+  background: transparent;
+  border: 2px solid #ff4af1;
+  color: #ffffff;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .form-control:focus {
-  border-color: #007bff;
-  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+  outline: none;
+  border-color: #ff6ff7;
+  box-shadow: 0 0 6px rgba(255, 79, 241, 0.5);
 }
 
-/* LogArea customization */
-.log-area {
-  height: 400px;
-  overflow-y: auto;
-  padding: 1rem;
-  background-color: #f1f1f1;
-  border-radius: 5px;
+/* === Buttons === */
+.btn {
+  display: inline-block;
+  background: transparent;
+  border: 2px solid #ff4af1;
+  color: #ff4af1;
+  text-transform: uppercase;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: #ff4af1;
+  color: #0e0b0f;
+}
+
+.btn-primary {
+  border-color: #ff4af1;
+  color: #ff4af1;
+}
+
+.btn-primary:hover {
+  background: #ff4af1;
+  color: #0e0b0f;
+}
+
+/* Add an arrow to the right for special buttons, if you like */
+.btn::after {
+  content: ' →';
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.btn:hover::after {
+  opacity: 1;
+}
+
+/* === Spinner === */
+.spinner-border {
+  color: #ff4af1;
+}
+
+/* === Links === */
+a, a:hover, a:focus, a:active {
+  text-decoration: none;
+  color: inherit;
+}
+
+.custom-btn {
+  @apply border border-pink-500 text-pink-500 uppercase tracking-wide py-2 px-4 text-sm transition-all duration-300 relative inline-block;
+}
+
+.custom-btn:hover {
+  @apply bg-pink-500 text-black;
+}
+
+.custom-btn::after {
+  content: ' →';
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.custom-btn:hover::after {
+  opacity: 1;
+}
+
+.glow-btn {
+  @apply relative text-white font-medium uppercase tracking-wide py-3 px-4 text-sm border border-pink-500 text-center transition-all duration-300 bg-white/10 backdrop-blur-md rounded-md;
+}
+
+.glow-btn:hover {
+  @apply bg-pink-500 text-black shadow-pink-500/50 shadow-lg;
+}
+
+.glow-btn::after {
+  content: ' →';
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.glow-btn:hover::after {
+  opacity: 1;
 }
