@@ -22,7 +22,7 @@ function SkuSyncPage() {
       <div className="z-10 w-full max-w-xl bg-white/5 backdrop-blur-md rounded-lg p-8 shadow-lg">
         <h2 className="text-3xl font-semibold text-center mb-6 uppercase tracking-wide">Sync by SKU</h2>
 
-        {!hasSynced && (
+        {!hasSynced && !isLoading && (
           <SkuSyncForm setLogMessages={setLogMessages} setIsLoading={setIsLoading} onSyncFinish={handleSyncFinish} />
         )}
 
