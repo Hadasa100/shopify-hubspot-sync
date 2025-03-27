@@ -1,14 +1,25 @@
 // src/components/SkuSyncForm.js
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { syncSku } from '../services/syncService';
 import CustomButton from './CustomButton';
 
-function SkuSyncForm({ setLogMessages }) {
+function SkuSyncForm({ setLogMessages, setIsLoading }) {
   const [sku, setSku] = useState('');
+  const navigate = useNavigate();
 
   const handleSyncSku = async () => {
-    setLogMessages(''); // Clear previous logs
+    setLogMessages('');
+    setIsLoading(true);
+
+    // Navigate immediately
+    navigate('/logs');
+
+    // Run the sync
     await syncSku(sku, setLogMessages);
+
+    // Stop spinner
+    setIsLoading(false);
   };
 
   return (

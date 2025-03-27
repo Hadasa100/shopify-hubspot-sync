@@ -51,7 +51,6 @@ export const syncSku = async (sku, setLogMessages) => {
   };
   
   export const syncByDateRange = ({ startDate, endDate }, setLogMessages) => {
-    // Build URL with query parameters
     const url = `/sync/dates?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`;
     const evtSource = new EventSource(url);
   

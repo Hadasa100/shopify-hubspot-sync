@@ -1,19 +1,30 @@
 // src/components/SyncByDateButton.js
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { syncByDateRange } from '../services/syncService';
 import CustomButton from './CustomButton';
 
-function SyncByDateButton({ setLogMessages }) {
+function SyncByDateButton({ setLogMessages, setIsLoading }) {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const navigate = useNavigate();
 
   const handleSyncByDates = async () => {
-    setLogMessages(''); // Clear previous logs
+    setLogMessages('');
     if (!startDate || !endDate) {
       setLogMessages('Please provide both start and end dates.');
       return;
     }
+    setIsLoading(true);
+
+    // Navigate right away
+    navigate('/logs');
+
+    // Run sync
     await syncByDateRange({ startDate, endDate }, setLogMessages);
+
+    // Stop spinner
+    setIsLoading(false);
   };
 
   return (

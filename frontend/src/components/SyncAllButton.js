@@ -1,12 +1,24 @@
 // src/components/SyncAllButton.js
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { syncAll } from '../services/syncService';
 import CustomButton from './CustomButton';
 
-function SyncAllButton({ setLogMessages }) {
+function SyncAllButton({ setLogMessages, setIsLoading }) {
+  const navigate = useNavigate();
+
   const handleSyncAll = async () => {
-    setLogMessages(''); // Clear previous logs
+    setLogMessages('');
+    setIsLoading(true);
+
+    // Immediately navigate to logs page
+    navigate('/logs');
+
+    // Perform the sync in the background
     await syncAll(setLogMessages);
+
+    // Once the sync is done, turn off spinner
+    setIsLoading(false);
   };
 
   return (
