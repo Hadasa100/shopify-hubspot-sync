@@ -17,10 +17,9 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/" element={<PrivateRoute><HomePage /></PrivateRoute>} />
-          <Route path="/" element={<HomePage />} />
-          <Route path="/sync-sku" element={<SkuSyncPage />} />
-          <Route path="/sync-dates" element={<SyncDatesPage />} />
-          <Route path="/sync-all" element={<SyncAllPage />} />
+          <Route path="/sync-sku" element={<PrivateRoute><SkuSyncPage /></PrivateRoute>} />
+          <Route path="/sync-dates" element={<PrivateRoute><SyncDatesPage /></PrivateRoute>} />
+          <Route path="/sync-all" element={<PrivateRoute><SyncAllPage /></PrivateRoute>} />
         </Routes>
       </div>
     </Router>
