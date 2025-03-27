@@ -2,27 +2,28 @@
 import express from 'express';
 import { createOrUpdateHubSpotProduct, deleteHubSpotProduct } from '../lib/hubspot.js';
 import logger from '../utils/logger.js';
-import { sendFailureEmail } from '../lib/email.js';
-
+import { sendSummaryEmail } from '../lib/email.js';
 
 const router = express.Router();
 
 // Webhook for creating/updating a product
 router.post('/product', express.json(), async (req, res) => {
   console.log('🚀 Webhook received for product create/update:');
-  const failures = []; 
+  const failures = [];
+  const successes = [];
 
   try {
-    await createOrUpdateHubSpotProduct(req.body, logger, failures);
+    const result = await createOrUpdateHubSpotProduct(req.body, logger, req.body?.variants?.edges?.[0]?.node?.sku || 'Unknown', failures);
+    if (result?.success) {
+      successes.push({ sku: result.sku, title: result.title, status: result.status });
+    }
     res.status(200).send('Product create/update processed.');
   } catch (error) {
     console.error('❌ Error processing product:', error);
     res.status(500).send('Error processing product webhook.');
   }
-  // After processing all SKUs, send one email if there are failures
-  if (failures.length > 0) {
-    await sendFailureEmail(failures);
-  }
+
+  await sendSummaryEmail(successes, failures);
 });
 
 // Webhook for deleting a product
