@@ -2,6 +2,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
+import LoginPage from './pages/LoginPage';
+import PrivateRoute from './components/PrivateRoute';
 
 import HomePage from './pages/HomePage';
 import SkuSyncPage from './pages/SkuSyncPage';
@@ -13,6 +15,8 @@ function App() {
     <Router>
       <div className="container mt-5">
         <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/" element={<PrivateRoute><HomePage /></PrivateRoute>} />
           <Route path="/" element={<HomePage />} />
           <Route path="/sync-sku" element={<SkuSyncPage />} />
           <Route path="/sync-dates" element={<SyncDatesPage />} />

@@ -11,7 +11,7 @@ function HomePage() {
 
       {/* Content */}
       <div className="z-10 text-center px-4 max-w-xl">
-        <h1 className="text-4xl sm:text-5xl md:text-6xl uppercase tracking-widest font-light leading-tight mb-6">
+        <h1 className="text-4xl sm:text-5xl md:text-5xl uppercase tracking-widest font-light leading-tight mb-6">
           Shopify–HubSpot Sync
         </h1>
         <p className="text-lg text-white/70 mb-12">
@@ -23,7 +23,7 @@ function HomePage() {
           <Link to="/sync-sku" className="glow-btn">Sync by Product SKUs</Link>
           <Link to="/sync-all" className="glow-btn">Sync All Products</Link>
           <Link to="/sync-dates" className="glow-btn">Sync Product by Dates</Link>
-          <a href="https://app.hubspot.com/contacts/49511833/objects/0-7/views/all/list" target="_blank" rel="noopener noreferrer" className="glow-btn">All HP Products</a>
+          <a href="https://app.hubspot.com/contacts/49511833/objects/0-7/views/all/list" target="_blank" rel="noopener noreferrer" className="glow-btn">All HS Products</a>
         </div>
 
         {/* Footer */}
