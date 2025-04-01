@@ -1,3 +1,4 @@
+// routes/sync.js
 import express from 'express';
 import { createOrUpdateHubSpotProduct } from '../lib/hubspot.js';
 import {
@@ -13,6 +14,24 @@ const router = express.Router();
 const createLogger = (res) => (message, showFrontend = false) => {
   logger(res, message, showFrontend);
 };
+
+async function processProducts(edges, log, failures, successes) {
+  for (const { node } of edges) {
+    const sku = node.variants?.edges?.[0]?.node?.sku || '';
+    log(`🔎 Processing product with SKU: ${sku || 'No SKU'}`);
+
+    const result = await createOrUpdateHubSpotProduct(
+      { ...node, admin_graphql_api_id: node.id },
+      log,
+      sku,
+      failures
+    );
+
+    if (result?.success) {
+      successes.push({ sku: result.sku, title: result.title, status: result.status });
+    }
+  }
+}
 
 router.post('/skus', async (req, res) => {
   const log = createLogger(res);
@@ -48,7 +67,7 @@ router.post('/skus', async (req, res) => {
       }
     }
 
-    log('SKU sync complete!', true);
+    log('✅ SKU sync complete!', true);
     await sendSummaryEmail(successes, failures);
     res.end();
   } catch (error) {
@@ -89,24 +108,8 @@ router.post('/all', async (req, res) => {
 
     while (hasNextPage) {
       const { edges, pageInfo } = await getShopifyProducts(afterCursor);
-
-      for (const { node } of edges) {
-        const sku = node.variants?.edges?.[0]?.node?.sku || '';
-        log(`🔎 Processing product with SKU: ${sku || 'No SKU'}`);
-
-        const result = await createOrUpdateHubSpotProduct(
-          { ...node, admin_graphql_api_id: node.id },
-          log,
-          sku,
-          failures
-        );
-
-        if (result?.success) {
-          successes.push({ sku: result.sku, title: result.title, status: result.status });
-        }
-
-        totalCount++;
-      }
+      await processProducts(edges, log, failures, successes);
+      totalCount += edges.length;
 
       hasNextPage = pageInfo.hasNextPage;
       if (hasNextPage && edges.length) {
@@ -140,8 +143,7 @@ router.get('/dates', async (req, res) => {
   res.flushHeaders();
 
   const log = (msg, showFrontend = true) => {
-    if (res.writableEnded) return;
-    logger(res, msg, showFrontend);
+    if (!res.writableEnded) logger(res, msg, showFrontend);
   };
 
   const { startDate, endDate } = req.query;
@@ -161,21 +163,8 @@ router.get('/dates', async (req, res) => {
   try {
     while (hasNextPage) {
       const { edges, pageInfo } = await getShopifyProductsByDateRange(startDate, endDate, afterCursor);
-
-      for (const { node } of edges) {
-        const sku = node.variants?.edges?.[0]?.node?.sku || "";
-        log(`🔎 Processing product with SKU: ${sku || 'No SKU'}`);
-        const result = await createOrUpdateHubSpotProduct(
-          { ...node, admin_graphql_api_id: node.id },
-          (msg) => log(msg),
-          sku,
-          failures
-        );
-        if (result?.success) {
-          successes.push({ sku: result.sku, title: result.title, status: result.status });
-        }
-        totalCount++;
-      }
+      await processProducts(edges, log, failures, successes);
+      totalCount += edges.length;
 
       hasNextPage = pageInfo.hasNextPage;
       if (hasNextPage && edges.length) {
