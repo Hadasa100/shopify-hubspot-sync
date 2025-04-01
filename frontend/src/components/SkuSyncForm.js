@@ -6,14 +6,13 @@ function SkuSyncForm({ setLogMessages, setIsLoading, onSyncFinish }) {
   const [sku, setSku] = useState('');
 
   const handleSyncSku = async () => {
-    setLogMessages('');
+    setLogMessages([]);
     setIsLoading(true);
 
-    // Run the sync
     await syncSku(sku, setLogMessages);
 
     setIsLoading(false);
-    onSyncFinish?.(); // Call this callback if provided
+    onSyncFinish?.();
   };
 
   return (

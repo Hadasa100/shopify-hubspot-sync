@@ -4,7 +4,7 @@ import LogArea from '../components/LogArea';
 import { Link } from 'react-router-dom';
 
 function SyncAllPage() {
-  const [logMessages, setLogMessages] = useState('');
+  const [logMessages, setLogMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSynced, setHasSynced] = useState(false);
   const [abortController, setAbortController] = useState(null);
@@ -17,7 +17,7 @@ function SyncAllPage() {
     if (abortController) {
       abortController.abort();
       setIsLoading(false);
-      setLogMessages('Sync cancelled by user.');
+      setLogMessages(['⛔ Sync cancelled by user.']);
       setHasSynced(true);
     }
   };
