@@ -25,12 +25,6 @@ function HomePage() {
           <Link to="/sync-dates" className="glow-btn">Sync Product by Dates</Link>
           <a href="https://app.hubspot.com/contacts/49511833/objects/0-7/views/all/list" target="_blank" rel="noopener noreferrer" className="glow-btn">All HS Products</a>
         </div>
-
-        {/* Footer */}
-        <footer className="flex justify-center items-center gap-2 text-pink-400 text-sm">
-          <FaInstagram />
-          <span>@leibish</span>
-        </footer>
       </div>
     </div>
   );
