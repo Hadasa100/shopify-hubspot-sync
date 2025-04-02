@@ -28,7 +28,6 @@ const createLogger = (res) => (message, showFrontend = false) => {
 async function processProducts(edges, log, failures, successes) {
   for (const { node } of edges) {
     const sku = node.variants?.edges?.[0]?.node?.sku || '';
-    log(`🔎 Processing product with SKU: ${sku || 'No SKU'}`);
 
     const result = await createOrUpdateHubSpotProduct(
       { ...node, admin_graphql_api_id: node.id },
@@ -58,7 +57,6 @@ router.post('/skus', async (req, res) => {
       : skus.trim().split(/\s+/);
 
     for (const sku of skus) {
-      log(`🔎 Looking up product with SKU: ${sku}`);
       const shopifyProductId = await getShopifyProductBySKU(sku);
       if (!shopifyProductId) {
         log(`❌ Could not find product for SKU: ${sku}`, true);
