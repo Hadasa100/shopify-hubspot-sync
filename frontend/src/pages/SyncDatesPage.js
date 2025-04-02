@@ -4,7 +4,7 @@ import LogArea from '../components/LogArea';
 import { Link } from 'react-router-dom';
 
 function SyncDatesPage() {
-  const [logMessages, setLogMessages] = useState('');
+  const [logMessages, setLogMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSynced, setHasSynced] = useState(false);
 
