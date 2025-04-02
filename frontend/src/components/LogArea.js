@@ -20,7 +20,7 @@ function LogArea({ logMessages }) {
         /❌|could not|failed|error/i.test(line) ? 'Failed' :
         /✅|created|updated|complete/i.test(line) ? 'Success' : '';
 
-      const cleanLine = line.replace(/[✓✔❌✖❎📦📋]/g, '').trim();
+      const cleanLine = line.replace(/[✓✔❌✖❎📦📋🔄🔎🔁]/g, '').trim();
       rows.push([sku, status, cleanLine]);
     });
 
