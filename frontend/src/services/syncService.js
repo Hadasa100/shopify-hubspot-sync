@@ -27,35 +27,26 @@ export const syncSku = async (sku, setLogMessages) => {
   }
 };
 
-export const syncAll = async (setLogMessages, signal) => {
-  try {
-    const response = await fetch('/sync/all', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal,
-    });
+export const syncAll = (setLogMessages) => {
+  const evtSource = new EventSource('/sync/all');
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder('utf-8');
-    let done = false;
+  evtSource.onopen = () => {
+    console.log('[SSE] Connection opened to /sync/all');
+  };
 
-    while (!done) {
-      const { value, done: doneReading } = await reader.read();
-      done = doneReading;
-      const chunk = decoder.decode(value || new Uint8Array());
-      if (chunk) {
-        const lines = chunk.split(/\r?\n/).filter(Boolean);
-        setLogMessages((prev) => [...prev, ...lines]);
-      }
-    }
-  } catch (error) {
-    if (error.name === 'AbortError') {
-      setLogMessages(['⛔ Sync cancelled by user.']);
-    } else {
-      setLogMessages(['❌ An error occurred while syncing all products.']);
-      console.error(error);
-    }
-  }
+  evtSource.onmessage = (event) => {
+    console.log('[SSE] Event received:', event.data);
+    const lines = event.data.split(/\r?\n/).filter(Boolean);
+    setLogMessages((prev) => [...prev, ...lines]);
+  };
+
+  evtSource.onerror = (error) => {
+    console.error('[SSE] Error during syncAll:', error);
+    setLogMessages((prev) => [...prev, '❌ An error occurred during syncAll.']);
+    evtSource.close();
+  };
+
+  return evtSource;
 };
 
 export const syncByDateRange = ({ startDate, endDate }, setLogMessages) => {
@@ -75,8 +66,8 @@ export const syncByDateRange = ({ startDate, endDate }, setLogMessages) => {
   };
 
   evtSource.onerror = (error) => {
+    console.error('[SSE] Error during syncByDateRange:', error);
     setLogMessages((prev) => [...prev, '❌ An error occurred during syncByDateRange.']);
-    console.error(error);
     evtSource.close();
   };
 };

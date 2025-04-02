@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import SyncAllButton from '../components/SyncAllButton';
 import LogArea from '../components/LogArea';
 import { Link } from 'react-router-dom';
@@ -7,17 +7,17 @@ function SyncAllPage() {
   const [logMessages, setLogMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSynced, setHasSynced] = useState(false);
-  const [abortController, setAbortController] = useState(null);
+  const controllerRef = useRef(null);
 
   const handleSyncFinish = () => {
     setHasSynced(true);
   };
 
-  const handleCancel = () => {
-    if (abortController) {
-      abortController.abort();
+  const handleAbort = () => {
+    if (controllerRef.current) {
+      controllerRef.current.abort();
+      setLogMessages((prev) => [...prev, '⛔ Sync cancelled by user.']);
       setIsLoading(false);
-      setLogMessages(['⛔ Sync cancelled by user.']);
       setHasSynced(true);
     }
   };
@@ -37,7 +37,7 @@ function SyncAllPage() {
             setLogMessages={setLogMessages}
             setIsLoading={setIsLoading}
             onSyncFinish={handleSyncFinish}
-            setAbortController={setAbortController}
+            controllerRef={controllerRef}
           />
         )}
 
@@ -52,13 +52,12 @@ function SyncAllPage() {
               <LogArea logMessages={logMessages} />
             </div>
 
-            <div className="text-center mt-6 flex flex-col sm:flex-row justify-center gap-4">
-              {isLoading && (
-                <button onClick={handleCancel} className="glow-btn bg-red-500 hover:bg-red-600 text-white">
-                  Cancel Sync
+            <div className="text-center mt-6">
+              {isLoading ? (
+                <button onClick={handleAbort} className="glow-btn bg-red-600 hover:bg-red-700">
+                  ⛔ Cancel Sync
                 </button>
-              )}
-              {hasSynced && (
+              ) : (
                 <Link to="/" className="glow-btn">Back to Home</Link>
               )}
             </div>

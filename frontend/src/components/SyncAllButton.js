@@ -2,13 +2,14 @@
 import React from 'react';
 import { syncAll } from '../services/syncService';
 
-function SyncAllButton({ setLogMessages, setIsLoading, onSyncFinish, setAbortController }) {
+function SyncAllButton({ setLogMessages, setIsLoading, onSyncFinish, controllerRef }) {
   const handleSyncAll = async () => {
     setLogMessages([]);
     setIsLoading(true);
 
     const controller = new AbortController();
-    setAbortController(controller);
+    if (controllerRef) controllerRef.current = controller;
+
     await syncAll(setLogMessages, controller.signal);
 
     setIsLoading(false);

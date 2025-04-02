@@ -12,6 +12,16 @@ import { sendSummaryEmail } from '../lib/email.js';
 const router = express.Router();
 
 const createLogger = (res) => (message, showFrontend = false) => {
+  const formatted = message.replace(/\n/g, ' ');
+
+  if (!res.writableEnded) {
+    try {
+      res.write(`data: ${formatted}\n\n`); // SSE-compliant format
+    } catch (e) {
+      console.warn('⚠️ Failed to write SSE log:', e.message);
+    }
+  }
+
   logger(res, message, showFrontend);
 };
 
@@ -81,7 +91,13 @@ router.post('/skus', async (req, res) => {
   }
 });
 
-router.post('/all', async (req, res) => {
+router.get('/all', async (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+
   const log = createLogger(res);
   const failures = [];
   const successes = [];
@@ -89,18 +105,24 @@ router.post('/all', async (req, res) => {
 
   console.log('🌐 Client connected to /sync/all');
 
+  const keepAlive = setInterval(() => {
+    if (!res.writableEnded) {
+      res.write('data: \n\n');
+    }
+  }, 2000);
+
   req.on('close', () => {
-    isCancelled = true;
-    console.log('❌ Client disconnected. Aborting sync.');
+    clearInterval(keepAlive);
+    if (!res.writableEnded) {
+      isCancelled = true;
+      console.log('❌ Client disconnected. Aborting sync.');
+    } else {
+      console.log('✅ Client closed connection after completion.');
+    }
   });
 
   try {
-    log('🔁 Starting sync of all products...', true);
-    const keepAliveInterval = setInterval(() => {
-      if (!res.writableEnded) {
-        res.write('🟢 keep-alive\n');
-      }
-    }, 10000);
+    log('🔁 Starting sync of all products...');
 
     let totalCount = 0;
     let hasNextPage = true;
@@ -117,20 +139,18 @@ router.post('/all', async (req, res) => {
       }
     }
 
-    clearInterval(keepAliveInterval);
-
     if (isCancelled || res.writableEnded) {
-      log('⛔ Sync cancelled by user.', true);
-      log('--- END LOG ---', true);
+      log('⛔ Sync cancelled by user.');
+      log('--- END LOG ---');
       return res.end();
     }
 
-    log(`✅ Synced ${totalCount} products to HubSpot.`, true);
+    log(`✅ Synced ${totalCount} products to HubSpot.`);
     await sendSummaryEmail(successes, failures);
-    log('--- END LOG ---', true);
+    log('--- END LOG ---');
     res.end();
   } catch (error) {
-    console.error('❌ Error syncing all products:', error);
+    log(`❌ Error syncing all products: ${error.message}`);
     res.end();
   }
 });
