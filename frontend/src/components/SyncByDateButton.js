@@ -6,26 +6,18 @@ function SyncByDateButton({ setLogMessages, setIsLoading, onSyncFinish }) {
   const [endDate, setEndDate] = useState('');
 
   const handleSyncByDates = async () => {
-    // אתחול הודעות לוג כמערך
     setLogMessages([]);
     if (!startDate || !endDate) {
-      setLogMessages(['Please provide both start and end dates.']);
+      setLogMessages('Please provide both start and end dates.');
       return;
     }
 
     setIsLoading(true);
 
-    try {
-      const result = await syncByDateRange({ startDate, endDate }, setLogMessages);
-      // אם השרת הודיע שהתהליך כבר רץ, לא ממשיכים הלאה
-      if (!result.busy) {
-        onSyncFinish?.();
-      }
-    } catch (error) {
-      console.error(error);
-    }
+    await syncByDateRange({ startDate, endDate }, setLogMessages);
 
     setIsLoading(false);
+    onSyncFinish?.();
   };
 
   return (
