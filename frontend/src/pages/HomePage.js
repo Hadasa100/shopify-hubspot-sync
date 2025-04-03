@@ -4,13 +4,13 @@ import { FaInstagram } from 'react-icons/fa';
 
 function HomePage() {
   return (
-    <div className="relative h-[700px] flex flex-col justify-center items-center bg-gradient-to-br from-[#0e0b0f] via-[#2c0a3a] to-[#000000] text-white overflow-hidden">
+    <div className="relative min-h-[700px] flex flex-col justify-center items-center bg-gradient-to-br from-[#0e0b0f] via-[#2c0a3a] to-[#000000] text-white overflow-hidden">
       {/* Glow background circles */}
       <div className="absolute -top-20 -left-32 w-[600px] h-[600px] bg-fuchsia-500/20 rounded-full blur-[180px] z-0"></div>
       <div className="absolute -bottom-20 -right-32 w-[500px] h-[500px] bg-purple-500/30 rounded-full blur-[160px] z-0"></div>
 
       {/* Content */}
-      <div className="z-10 text-center px-4 max-w-xl">
+      <div className="z-10 text-center px-4 ">
         <h1 className="text-4xl sm:text-5xl md:text-5xl uppercase tracking-widest font-light leading-tight mb-6">
           Shopify–HubSpot Sync
         </h1>
