@@ -1,3 +1,4 @@
+// src/components/SyncByDateButton.js
 import React, { useState } from 'react';
 import { syncByDateRange } from '../services/syncService';
 
@@ -14,11 +15,8 @@ function SyncByDateButton({ setLogMessages, setIsLoading, onSyncFinish, setProgr
       return;
     }
 
-    setIsLoading(true);
+    await syncByDateRange({ startDate, endDate }, setLogMessages, setProgress, setIsLoading);
 
-    await syncByDateRange({ startDate, endDate }, setLogMessages, setProgress);
-
-    setIsLoading(false);
     onSyncFinish?.();
   };
 

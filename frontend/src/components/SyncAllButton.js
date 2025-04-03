@@ -2,18 +2,17 @@
 import React from 'react';
 import { syncAll } from '../services/syncService';
 
-function SyncAllButton({ setLogMessages, setIsLoading, onSyncFinish, controllerRef, setProgress }) {
+function SyncAllButton({ setLogMessages, setIsLoading, onSyncFinish, controllerRef, setProgress, eventSourceRef }) {
   const handleSyncAll = async () => {
     setLogMessages([]);
-    setIsLoading(true);
-    setProgress?.(null); // reset progress
+    setProgress?.(null);
 
     const controller = new AbortController();
     if (controllerRef) controllerRef.current = controller;
 
-    await syncAll(setLogMessages, controller.signal, setProgress);
+    const evtSource = syncAll(setLogMessages, controller.signal, setProgress, setIsLoading);
+    if (eventSourceRef) eventSourceRef.current = evtSource;
 
-    setIsLoading(false);
     onSyncFinish?.();
   };
 

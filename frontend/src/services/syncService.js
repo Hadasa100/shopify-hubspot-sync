@@ -1,7 +1,8 @@
 // src/services/syncService.js
 
-export const syncSku = async (sku, setLogMessages, setProgress) => {
+export const syncSku = async (sku, setLogMessages, setProgress, setIsLoading) => {
   try {
+    setIsLoading?.(true);
     const response = await fetch('/sync/skus', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -33,10 +34,13 @@ export const syncSku = async (sku, setLogMessages, setProgress) => {
   } catch (error) {
     setLogMessages(['❌ An error occurred.']);
     console.error(error);
+  } finally {
+    setIsLoading?.(false);
   }
 };
 
-export const syncAll = (setLogMessages, signal, setProgress) => {
+export const syncAll = (setLogMessages, signal, setProgress, setIsLoading) => {
+  setIsLoading?.(true);
   const evtSource = new EventSource('/sync/all');
 
   evtSource.onopen = () => {
@@ -49,6 +53,7 @@ export const syncAll = (setLogMessages, signal, setProgress) => {
       const finalLine = `📦 Final: ${finalData.message || 'Completed.'}`;
       setLogMessages((prev) => [...prev, finalLine]);
       evtSource.close();
+      setIsLoading?.(false);
       return;
     }
 
@@ -68,12 +73,14 @@ export const syncAll = (setLogMessages, signal, setProgress) => {
     console.error('[SSE] Error during syncAll:', error);
     setLogMessages((prev) => [...prev, '❌ An error occurred during syncAll.']);
     evtSource.close();
+    setIsLoading?.(false);
   };
 
   return evtSource;
 };
 
-export const syncByDateRange = ({ startDate, endDate }, setLogMessages, setProgress) => {
+export const syncByDateRange = ({ startDate, endDate }, setLogMessages, setProgress, setIsLoading) => {
+  setIsLoading?.(true);
   const url = `/sync/dates?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`;
   const evtSource = new EventSource(url);
 
@@ -83,6 +90,7 @@ export const syncByDateRange = ({ startDate, endDate }, setLogMessages, setProgr
       const finalLine = `📦 Final: ${finalData.message || 'Completed.'}`;
       setLogMessages((prev) => [...prev, finalLine]);
       evtSource.close();
+      setIsLoading?.(false);
     } else {
       const lines = event.data.split(/\r?\n/).filter(Boolean);
       for (const line of lines) {
@@ -101,5 +109,6 @@ export const syncByDateRange = ({ startDate, endDate }, setLogMessages, setProgr
     console.error('[SSE] Error during syncByDateRange:', error);
     setLogMessages((prev) => [...prev, '❌ An error occurred during syncByDateRange.']);
     evtSource.close();
+    setIsLoading?.(false);
   };
 };
