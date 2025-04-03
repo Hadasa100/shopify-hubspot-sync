@@ -2,15 +2,16 @@
 import React from 'react';
 import { syncAll } from '../services/syncService';
 
-function SyncAllButton({ setLogMessages, setIsLoading, onSyncFinish, controllerRef }) {
+function SyncAllButton({ setLogMessages, setIsLoading, onSyncFinish, controllerRef, setProgress }) {
   const handleSyncAll = async () => {
     setLogMessages([]);
     setIsLoading(true);
+    setProgress?.(null); // reset progress
 
     const controller = new AbortController();
     if (controllerRef) controllerRef.current = controller;
 
-    await syncAll(setLogMessages, controller.signal);
+    await syncAll(setLogMessages, controller.signal, setProgress);
 
     setIsLoading(false);
     onSyncFinish?.();

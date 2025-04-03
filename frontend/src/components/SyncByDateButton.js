@@ -1,20 +1,22 @@
 import React, { useState } from 'react';
 import { syncByDateRange } from '../services/syncService';
 
-function SyncByDateButton({ setLogMessages, setIsLoading, onSyncFinish }) {
+function SyncByDateButton({ setLogMessages, setIsLoading, onSyncFinish, setProgress }) {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
   const handleSyncByDates = async () => {
     setLogMessages([]);
+    setProgress?.(null);
+
     if (!startDate || !endDate) {
-      setLogMessages('Please provide both start and end dates.');
+      setLogMessages(['❌ Please provide both start and end dates.']);
       return;
     }
 
     setIsLoading(true);
 
-    await syncByDateRange({ startDate, endDate }, setLogMessages);
+    await syncByDateRange({ startDate, endDate }, setLogMessages, setProgress);
 
     setIsLoading(false);
     onSyncFinish?.();

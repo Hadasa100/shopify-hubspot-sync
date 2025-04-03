@@ -1,8 +1,7 @@
+import pLimit from 'p-limit';
 import { createOrUpdateHubSpotProduct } from '../lib/hubspot.js';
 
-/**
- * Logs a message to the frontend stream and server logs.
- */
+const CONCURRENCY_LIMIT = 5;
 const createLogger = (res) => (message, showFrontend = false) => {
   const formatted = message.replace(/\n/g, ' ');
   console.log(formatted);
@@ -15,29 +14,31 @@ const createLogger = (res) => (message, showFrontend = false) => {
   }
 };
 
-/**
- * Processes a list of Shopify product edges.
- */
-export async function processProducts(edges, log, failures, successes) {
-  for (const { node } of edges) {
+export async function processProducts(edges, log, failures, successes, progress) {
+  const limit = pLimit(CONCURRENCY_LIMIT);
+
+  const tasks = edges.map(({ node }, index) => {
     const sku = node.variants?.edges?.[0]?.node?.sku || '';
+    return limit(async () => {
+      const result = await createOrUpdateHubSpotProduct(
+        { ...node, admin_graphql_api_id: node.id },
+        log,
+        sku,
+        failures
+      );
 
-    const result = await createOrUpdateHubSpotProduct(
-      { ...node, admin_graphql_api_id: node.id },
-      log,
-      sku,
-      failures
-    );
+      if (result?.success) {
+        successes.push({ sku: result.sku, title: result.title, status: result.status });
+      }
 
-    if (result?.success) {
-      successes.push({ sku: result.sku, title: result.title, status: result.status });
-    }
-  }
+      progress.processed++;
+      log(`📦 Progress: ${progress.processed} / ${progress.total}`, true);
+    });
+  });
+
+  await Promise.allSettled(tasks);
 }
 
-/**
- * Sync products by SKU list.
- */
 export async function syncBySkus(skus, res, getProductBySKU, sendSummaryEmail) {
   const log = createLogger(res);
   const failures = [];
@@ -47,109 +48,129 @@ export async function syncBySkus(skus, res, getProductBySKU, sendSummaryEmail) {
     ? skus.flatMap((sku) => sku.trim().split(/\s+/))
     : skus.trim().split(/\s+/);
 
-  for (const sku of skus) {
-    const shopifyProductId = await getProductBySKU(sku);
-    if (!shopifyProductId) {
-      log(`❌ Could not find product for SKU: ${sku}`, true);
-      failures.push({ sku, reason: 'Product not found in Shopify' });
-      continue;
-    }
+  const total = skus.length;
+  const progress = { processed: 0, total };
 
-    const result = await createOrUpdateHubSpotProduct(
-      { admin_graphql_api_id: shopifyProductId },
-      log,
-      sku,
-      failures
-    );
+  const limit = pLimit(CONCURRENCY_LIMIT);
 
-    if (result?.success) {
-      successes.push({ sku: result.sku, title: result.title, status: result.status });
-    }
-  }
+  const tasks = skus.map((sku) =>
+    limit(async () => {
+      const shopifyProductId = await getProductBySKU(sku);
+      if (!shopifyProductId) {
+        log(`❌ Could not find product for SKU: ${sku}`, true);
+        failures.push({ sku, reason: 'Product not found in Shopify' });
+      } else {
+        const result = await createOrUpdateHubSpotProduct(
+          { admin_graphql_api_id: shopifyProductId },
+          log,
+          sku,
+          failures
+        );
+        if (result?.success) {
+          successes.push({ sku: result.sku, title: result.title, status: result.status });
+        }
+      }
+      progress.processed++;
+      log(`📦 Progress: ${progress.processed} / ${progress.total}`, true);
+    })
+  );
+
+  await Promise.allSettled(tasks);
 
   log('✅ SKU sync complete!', true);
   await sendSummaryEmail(successes, failures);
 }
 
-/**
- * Sync all Shopify products with pagination.
- */
 export async function syncAllProducts(res, getAllProducts, sendSummaryEmail) {
-    const log = createLogger(res);
-    const failures = [];
-    const successes = [];
-    let isCancelled = false;
-    let totalCount = 0;
-  
-    res.on('close', () => {
-      if (!res.writableEnded) {
-        isCancelled = true;
-        console.log('❌ Client disconnected. Aborting sync.');
-      } else {
-        console.log('✅ Client closed connection after completion.');
-      }
-    });
-  
-    log('🔁 Starting sync of all products...');
-  
-    let hasNextPage = true;
-    let afterCursor = null;
-  
-    while (hasNextPage) {
-      const { edges, pageInfo } = await getAllProducts(afterCursor);
-      await processProducts(edges, log, failures, successes);
-      totalCount += edges.length;
-  
-      hasNextPage = pageInfo.hasNextPage;
-      if (hasNextPage && edges.length) {
-        afterCursor = edges[edges.length - 1].cursor;
-      }
-  
-      if (isCancelled || res.writableEnded) {
-        log('⛔ Sync cancelled by user.');
-        log('--- END LOG ---');
-        return res.end();
-      }
+  const log = createLogger(res);
+  const failures = [];
+  const successes = [];
+  let isCancelled = false;
+  let totalCount = 0;
+  let processedCount = 0;
+
+  res.on('close', () => {
+    if (!res.writableEnded) {
+      isCancelled = true;
+      console.log('❌ Client disconnected. Aborting sync.');
+    } else {
+      console.log('✅ Client closed connection after completion.');
     }
-  
-    log(`✅ Synced ${totalCount} products to HubSpot.`);
-    await sendSummaryEmail(successes, failures);
-    log('--- END LOG ---');
+  });
+
+  log('🔁 Starting sync of all products...');
+
+  let hasNextPage = true;
+  let afterCursor = null;
+
+  while (hasNextPage) {
+    const { edges, pageInfo } = await getAllProducts(afterCursor);
+    totalCount += edges.length;
+
+    await processProducts(edges, log, failures, successes, {
+      processed: processedCount,
+      total: totalCount,
+    });
+
+    processedCount = successes.length + failures.length;
+
+    hasNextPage = pageInfo.hasNextPage;
+    if (hasNextPage && edges.length) {
+      afterCursor = edges[edges.length - 1].cursor;
+    }
+
+    if (isCancelled || res.writableEnded) {
+      log('⛔ Sync cancelled by user.');
+      log('--- END LOG ---');
+      return res.end();
+    }
+  }
+
+  log(`✅ Synced ${processedCount} products to HubSpot.`);
+  await sendSummaryEmail(successes, failures);
+  log('--- END LOG ---');
+  res.end();
+}
+
+export async function syncProductsByDateRange(res, startDate, endDate, getByDateRange, sendSummaryEmail) {
+  const log = createLogger(res);
+  const failures = [];
+  const successes = [];
+  let totalCount = 0;
+  let processedCount = 0;
+
+  log(`🔁 Starting sync of products between ${startDate} and ${endDate}...`, true);
+
+  let hasNextPage = true;
+  let afterCursor = null;
+
+  while (hasNextPage) {
+    const { edges, pageInfo } = await getByDateRange(startDate, endDate, afterCursor);
+    totalCount += edges.length;
+
+    await processProducts(edges, log, failures, successes, {
+      processed: processedCount,
+      total: totalCount,
+    });
+
+    processedCount = successes.length + failures.length;
+
+    hasNextPage = pageInfo.hasNextPage;
+    if (hasNextPage && edges.length) {
+      afterCursor = edges[edges.length - 1].cursor;
+    }
+  }
+
+  log(`✅ Synced ${processedCount} products to HubSpot.`);
+  await sendSummaryEmail(successes, failures);
+
+  if (!res.writableEnded) {
+    res.write(
+      `data: FINAL:${JSON.stringify({
+        message: `Synced ${processedCount} products to HubSpot.`,
+        failedCount: failures.length,
+      })}\n\n`
+    );
     res.end();
   }
-  
-  
-  /**
-   * Sync products by date range.
-   */
-  export async function syncProductsByDateRange(res, startDate, endDate, getByDateRange, sendSummaryEmail) {
-    const log = createLogger(res);
-    const failures = [];
-    const successes = [];
-    let totalCount = 0;
-  
-    log(`🔁 Starting sync of products between ${startDate} and ${endDate}...`, true);
-  
-    let hasNextPage = true;
-    let afterCursor = null;
-  
-    while (hasNextPage) {
-      const { edges, pageInfo } = await getByDateRange(startDate, endDate, afterCursor);
-      await processProducts(edges, log, failures, successes);
-      totalCount += edges.length;
-  
-      hasNextPage = pageInfo.hasNextPage;
-      if (hasNextPage && edges.length) {
-        afterCursor = edges[edges.length - 1].cursor;
-      }
-    }
-  
-    log(`✅ Synced ${totalCount} products to HubSpot.`);
-    await sendSummaryEmail(successes, failures);
-  
-    if (!res.writableEnded) {
-      res.write(`data: FINAL:${JSON.stringify({ message: `Synced ${totalCount} products to HubSpot.`, failedCount: failures.length })}\n\n`);
-      res.end();
-    }
-  }
-  
+}

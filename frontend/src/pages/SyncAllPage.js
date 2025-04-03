@@ -1,12 +1,12 @@
 import React, { useState, useRef } from 'react';
 import SyncAllButton from '../components/SyncAllButton';
-import LogArea from '../components/LogArea';
-import { Link } from 'react-router-dom';
+import SyncResultPanel from '../components/SyncResultPanel';
 
 function SyncAllPage() {
   const [logMessages, setLogMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSynced, setHasSynced] = useState(false);
+  const [progress, setProgress] = useState(null);
   const controllerRef = useRef(null);
 
   const handleSyncFinish = () => {
@@ -38,30 +38,23 @@ function SyncAllPage() {
             setIsLoading={setIsLoading}
             onSyncFinish={handleSyncFinish}
             controllerRef={controllerRef}
+            setProgress={setProgress}
           />
         )}
 
         {(isLoading || hasSynced) && (
-          <>
-            <div className="min-h-[100px] bg-white/5 backdrop-blur-md rounded-md p-4">
-              {isLoading && (
-                <div className="flex justify-center mb-4">
-                  <div className="w-6 h-6 border-4 border-pink-500 border-t-transparent rounded-full animate-spin"></div>
-                </div>
-              )}
-              <LogArea logMessages={logMessages} />
-            </div>
-
-            <div className="text-center mt-6">
-              {isLoading ? (
-                <button onClick={handleAbort} className="glow-btn bg-red-600 hover:bg-red-700">
-                  ⛔ Cancel Sync
-                </button>
-              ) : (
-                <Link to="/" className="glow-btn">Back to Home</Link>
-              )}
-            </div>
-          </>
+          <SyncResultPanel
+            isLoading={isLoading}
+            hasSynced={hasSynced}
+            progress={progress}
+            logMessages={logMessages}
+          >
+            {isLoading ? (
+              <button onClick={handleAbort} className="glow-btn bg-red-600 hover:bg-red-700">
+                ⛔ Cancel Sync
+              </button>
+            ) : null}
+          </SyncResultPanel>
         )}
       </div>
     </div>

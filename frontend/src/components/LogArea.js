@@ -40,17 +40,6 @@ function LogArea({ logMessages }) {
 
   return (
     <div className="bg-white/5 rounded-md p-4 max-h-[400px] overflow-y-auto">
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-lg font-semibold text-pink-400">Live Sync Logs</h3>
-        {logMessages.length > 0 && (
-          <button
-            onClick={handleExport}
-            className="text-xs text-white bg-pink-500 hover:bg-pink-600 py-1 px-3 rounded transition"
-          >
-            Export CSV
-          </button>
-        )}
-      </div>
       <ul className="space-y-1 font-mono text-sm text-white/90">
         {logMessages.map((line, index) => (
           <li key={index} className="border-b border-white/10 pb-1">

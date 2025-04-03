@@ -1,6 +1,6 @@
 // src/services/syncService.js
 
-export const syncSku = async (sku, setLogMessages) => {
+export const syncSku = async (sku, setLogMessages, setProgress) => {
   try {
     const response = await fetch('/sync/skus', {
       method: 'POST',
@@ -18,7 +18,16 @@ export const syncSku = async (sku, setLogMessages) => {
       if (value) {
         const chunk = decoder.decode(value);
         const lines = chunk.split(/\r?\n/).filter(Boolean);
-        setLogMessages((prev) => [...prev, ...lines]);
+
+        for (const line of lines) {
+          const match = line.match(/Progress:\s*(\d+)\s*\/\s*(\d+)/i);
+          if (match) {
+            const current = parseInt(match[1]);
+            const total = parseInt(match[2]);
+            setProgress?.({ current, total });
+          }
+          setLogMessages((prev) => [...prev, line]);
+        }
       }
     }
   } catch (error) {
@@ -27,7 +36,7 @@ export const syncSku = async (sku, setLogMessages) => {
   }
 };
 
-export const syncAll = (setLogMessages) => {
+export const syncAll = (setLogMessages, signal, setProgress) => {
   const evtSource = new EventSource('/sync/all');
 
   evtSource.onopen = () => {
@@ -35,9 +44,24 @@ export const syncAll = (setLogMessages) => {
   };
 
   evtSource.onmessage = (event) => {
-    console.log('[SSE] Event received:', event.data);
+    if (event.data.startsWith('FINAL:')) {
+      const finalData = JSON.parse(event.data.substring(6));
+      const finalLine = `📦 Final: ${finalData.message || 'Completed.'}`;
+      setLogMessages((prev) => [...prev, finalLine]);
+      evtSource.close();
+      return;
+    }
+
     const lines = event.data.split(/\r?\n/).filter(Boolean);
-    setLogMessages((prev) => [...prev, ...lines]);
+    for (const line of lines) {
+      const match = line.match(/Progress:\s*(\d+)\s*\/\s*(\d+)/i);
+      if (match) {
+        const current = parseInt(match[1]);
+        const total = parseInt(match[2]);
+        setProgress?.({ current, total });
+      }
+      setLogMessages((prev) => [...prev, line]);
+    }
   };
 
   evtSource.onerror = (error) => {
@@ -49,7 +73,7 @@ export const syncAll = (setLogMessages) => {
   return evtSource;
 };
 
-export const syncByDateRange = ({ startDate, endDate }, setLogMessages) => {
+export const syncByDateRange = ({ startDate, endDate }, setLogMessages, setProgress) => {
   const url = `/sync/dates?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`;
   const evtSource = new EventSource(url);
 
@@ -61,7 +85,15 @@ export const syncByDateRange = ({ startDate, endDate }, setLogMessages) => {
       evtSource.close();
     } else {
       const lines = event.data.split(/\r?\n/).filter(Boolean);
-      setLogMessages((prev) => [...prev, ...lines]);
+      for (const line of lines) {
+        const match = line.match(/Progress:\s*(\d+)\s*\/\s*(\d+)/i);
+        if (match) {
+          const current = parseInt(match[1]);
+          const total = parseInt(match[2]);
+          setProgress?.({ current, total });
+        }
+        setLogMessages((prev) => [...prev, line]);
+      }
     }
   };
 

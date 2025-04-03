@@ -2,14 +2,15 @@
 import React, { useState } from 'react';
 import { syncSku } from '../services/syncService';
 
-function SkuSyncForm({ setLogMessages, setIsLoading, onSyncFinish }) {
+function SkuSyncForm({ setLogMessages, setIsLoading, onSyncFinish, setProgress }) {
   const [sku, setSku] = useState('');
 
   const handleSyncSku = async () => {
     setLogMessages([]);
     setIsLoading(true);
+    setProgress?.(null); // reset progress
 
-    await syncSku(sku, setLogMessages);
+    await syncSku(sku, setLogMessages, setProgress);
 
     setIsLoading(false);
     onSyncFinish?.();

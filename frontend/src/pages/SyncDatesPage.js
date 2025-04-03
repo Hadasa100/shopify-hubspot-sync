@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import SyncByDateButton from '../components/SyncByDateButton';
-import LogArea from '../components/LogArea';
-import { Link } from 'react-router-dom';
+import SyncResultPanel from '../components/SyncResultPanel';
 
 function SyncDatesPage() {
   const [logMessages, setLogMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSynced, setHasSynced] = useState(false);
+  const [progress, setProgress] = useState(null);
 
   const handleSyncFinish = () => {
     setHasSynced(true);
@@ -22,27 +22,22 @@ function SyncDatesPage() {
       <div className="z-10 w-full max-w-xl bg-white/5 backdrop-blur-md rounded-lg p-8 shadow-lg">
         <h2 className="text-3xl font-semibold text-center mb-6 uppercase tracking-wide">Sync by Dates</h2>
 
-        {!hasSynced && (
-          <SyncByDateButton setLogMessages={setLogMessages} setIsLoading={setIsLoading} onSyncFinish={handleSyncFinish} />
+        {!hasSynced && !isLoading && (
+          <SyncByDateButton
+            setLogMessages={setLogMessages}
+            setIsLoading={setIsLoading}
+            onSyncFinish={handleSyncFinish}
+            setProgress={setProgress}
+          />
         )}
 
         {(isLoading || hasSynced) && (
-          <>
-            <div className="min-h-[100px] bg-white/5 backdrop-blur-md rounded-md p-4">
-              {isLoading && (
-                <div className="flex justify-center mb-4">
-                  <div className="w-6 h-6 border-4 border-pink-500 border-t-transparent rounded-full animate-spin"></div>
-                </div>
-              )}
-              <LogArea logMessages={logMessages} />
-            </div>
-
-            {hasSynced && (
-              <div className="text-center mt-6">
-                <Link to="/" className="glow-btn">Back to Home</Link>
-              </div>
-            )}
-          </>
+          <SyncResultPanel
+            isLoading={isLoading}
+            hasSynced={hasSynced}
+            progress={progress}
+            logMessages={logMessages}
+          />
         )}
       </div>
     </div>

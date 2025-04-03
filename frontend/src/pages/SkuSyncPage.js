@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import SkuSyncForm from '../components/SkuSyncForm';
-import LogArea from '../components/LogArea';
-import { Link } from 'react-router-dom';
+import SyncResultPanel from '../components/SyncResultPanel';
 
 function SkuSyncPage() {
   const [logMessages, setLogMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSynced, setHasSynced] = useState(false);
+  const [progress, setProgress] = useState(null);
 
   const handleSyncFinish = () => {
     setHasSynced(true);
@@ -23,26 +23,21 @@ function SkuSyncPage() {
         <h2 className="text-3xl font-semibold text-center mb-6 uppercase tracking-wide">Sync by SKU</h2>
 
         {!hasSynced && !isLoading && (
-          <SkuSyncForm setLogMessages={setLogMessages} setIsLoading={setIsLoading} onSyncFinish={handleSyncFinish} />
+          <SkuSyncForm
+            setLogMessages={setLogMessages}
+            setIsLoading={setIsLoading}
+            onSyncFinish={handleSyncFinish}
+            setProgress={setProgress}
+          />
         )}
 
         {(isLoading || hasSynced) && (
-          <>
-            <div className="min-h-[100px] bg-white/5 backdrop-blur-md rounded-md p-4">
-              {isLoading && (
-                <div className="flex justify-center mb-4">
-                  <div className="w-6 h-6 border-4 border-pink-500 border-t-transparent rounded-full animate-spin"></div>
-                </div>
-              )}
-              <LogArea logMessages={logMessages} />
-            </div>
-
-            {hasSynced && (
-              <div className="text-center mt-6">
-                <Link to="/" className="glow-btn">Back to Home</Link>
-              </div>
-            )}
-          </>
+          <SyncResultPanel
+            isLoading={isLoading}
+            hasSynced={hasSynced}
+            progress={progress}
+            logMessages={logMessages}
+          />
         )}
       </div>
     </div>
