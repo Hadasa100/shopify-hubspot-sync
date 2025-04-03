@@ -23,7 +23,7 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-[#0e0b0f] via-[#2c0a3a] to-[#000000] text-white">
+    <div className="h-[700px] flex justify-center items-center bg-gradient-to-br from-[#0e0b0f] via-[#2c0a3a] to-[#000000] text-white">
       <div className="bg-white/10 backdrop-blur-md p-8 rounded-xl shadow-xl w-full max-w-sm">
         <h2 className="text-3xl font-light mb-6 text-center">Login</h2>
         <form onSubmit={handleLogin} className="space-y-4">
