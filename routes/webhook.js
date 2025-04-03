@@ -45,7 +45,7 @@ router.post('/product', express.json(), async (req, res) => {
     if (result?.success) {
       recentResults.successes.push({ sku: result.sku, title: result.title, status: result.status });
     } else {
-      recentResults.failures.push({ sku: failures.sku, reason: failures.reason });
+      recentResults.failures.push(failures[0] || { sku: 'Unknown', reason: 'Unknown error' });
     }
 
     queueSummaryEmail();
