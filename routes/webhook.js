@@ -38,21 +38,21 @@ router.post('/product', express.json(), async (req, res) => {
     const result = await createOrUpdateHubSpotProduct(
       req.body,
       logger,
-      req.body?.variants?.edges?.[0]?.node?.sku || 'Unknown',
+      req.body?.variants?.[0]?.sku || 'Unknown',
       failures
     );
 
     if (result?.success) {
       recentResults.successes.push({ sku: result.sku, title: result.title, status: result.status });
     } else {
-      recentResults.failures.push(...failures);
+      recentResults.failures.push({ sku: failures.sku, reason: failures.reason });
     }
 
     queueSummaryEmail();
     res.status(200).send('✅ Product create/update processed.');
   } catch (error) {
     console.error('❌ Error processing product webhook:', error);
-    recentResults.failures.push({ sku: req.body?.variants?.edges?.[0]?.node?.sku || 'Unknown', reason: 'Webhook error: ' + error.message });
+    recentResults.failures.push({ sku: req.body?.variants?.[0]?.sku || 'Unknown', reason: 'Webhook error: ' + error.message });
     queueSummaryEmail();
     res.status(500).send('❌ Error processing product webhook.');
   }
