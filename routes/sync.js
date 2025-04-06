@@ -13,7 +13,6 @@ import {
   syncBySkus,
 } from '../services/productSyncService.js';
 
-
 const router = express.Router();
 
 router.post('/skus', async (req, res) => {
@@ -30,49 +29,58 @@ router.post('/skus', async (req, res) => {
     if (!res.headersSent) {
       res.status(500).json({ error: 'An error occurred while syncing SKUs.' });
     } else {
-      res.write('❌ An error occurred while syncing SKUs.');
+      res.write('data: ❌ An error occurred while syncing SKUs.\n\n');
+      res.flush?.();
       res.end();
     }
   }
 });
 
-
 router.get('/all', syncAllLimiter, async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Transfer-Encoding', 'chunked');
   res.setHeader('X-Accel-Buffering', 'no');
   res.flushHeaders();
+
+  res.write('data: 🔄 Starting full sync...\n\n');
+  res.flush?.();
 
   try {
     await syncAllProducts(res, getShopifyProducts, sendSummaryEmail);
   } catch (error) {
     res.write(`data: FINAL:${JSON.stringify({ error: `❌ Error syncing all products: ${error.message}` })}\n\n`);
+    res.flush?.();
     res.end();
   }
 });
-
 
 router.get('/dates', async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Transfer-Encoding', 'chunked');
   res.setHeader('X-Accel-Buffering', 'no');
   res.flushHeaders();
 
   const { startDate, endDate } = req.query;
   if (!startDate || !endDate) {
     res.write(`data: FINAL:${JSON.stringify({ error: '❌ Please provide both startDate and endDate in the format YYYY-MM-DD.' })}\n\n`);
+    res.flush?.();
     return res.end();
   }
+
+  res.write(`data: 🔄 Syncing products from ${startDate} to ${endDate}...\n\n`);
+  res.flush?.();
 
   try {
     await syncProductsByDateRange(res, startDate, endDate, getShopifyProductsByDateRange, sendSummaryEmail);
   } catch (error) {
     res.write(`data: FINAL:${JSON.stringify({ error: `❌ Error syncing products by date range: ${error.message}` })}\n\n`);
+    res.flush?.();
     res.end();
   }
 });
-
 
 export default router;
