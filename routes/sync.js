@@ -12,6 +12,7 @@ import {
   syncProductsByDateRange,
   syncBySkus,
 } from '../services/productSyncService.js';
+import { getSyncHistory } from '../services/syncHistoryService.js';
 
 const router = express.Router();
 
@@ -81,6 +82,10 @@ router.get('/dates', async (req, res) => {
     res.flush?.();
     res.end();
   }
+});
+
+router.get('/history', (req, res) => {
+  res.json(getSyncHistory());
 });
 
 export default router;

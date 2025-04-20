@@ -1,5 +1,7 @@
 import pLimit from 'p-limit';
 import { createOrUpdateHubSpotProduct } from '../lib/hubspot.js';
+import { saveSyncResult } from '../lib/historyLogger.js';
+
 
 const CONCURRENCY_LIMIT = 5;
 const createLogger = (res) => (message, showFrontend = false) => {
@@ -78,7 +80,13 @@ export async function syncBySkus(skus, res, getProductBySKU, sendSummaryEmail) {
   await Promise.allSettled(tasks);
 
   log('✅ SKU sync complete!', true);
-  await sendSummaryEmail(successes, failures);
+  try {
+    await sendSummaryEmail(successes, failures);
+  } catch (error) {
+    console.error('⚠️ Failed to send summary email:', error.message);
+  }
+  
+  saveSyncResult({ type: 'sku', successes, failures });
 }
 
 export async function syncAllProducts(res, getAllProducts, sendSummaryEmail) {
@@ -127,9 +135,19 @@ export async function syncAllProducts(res, getAllProducts, sendSummaryEmail) {
   }
 
   log(`✅ Synced ${processedCount} products to HubSpot.`);
+
+try {
   await sendSummaryEmail(successes, failures);
-  log('--- END LOG ---');
-  res.end();
+} catch (error) {
+  console.error('⚠️ Failed to send summary email:', error.message);
+}
+
+saveSyncResult({ type: 'all', successes, failures });
+
+log('--- END LOG ---');
+res.end();
+
+return { successes, failures };
 }
 
 export async function syncProductsByDateRange(res, startDate, endDate, getByDateRange, sendSummaryEmail) {
@@ -162,8 +180,15 @@ export async function syncProductsByDateRange(res, startDate, endDate, getByDate
   }
 
   log(`✅ Synced ${processedCount} products to HubSpot.`);
-  await sendSummaryEmail(successes, failures);
 
+  try {
+    await sendSummaryEmail(successes, failures);
+  } catch (error) {
+    console.error('⚠️ Failed to send summary email:', error.message);
+  }
+  
+  saveSyncResult({ type: 'dates', successes, failures });
+  
   if (!res.writableEnded) {
     res.write(
       `data: FINAL:${JSON.stringify({
@@ -173,4 +198,6 @@ export async function syncProductsByDateRange(res, startDate, endDate, getByDate
     );
     res.end();
   }
+  
+  return { successes, failures };
 }

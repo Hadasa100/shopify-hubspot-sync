@@ -24,6 +24,7 @@ function HomePage() {
           <Link to="/sync-all" className="glow-btn">Sync All Products</Link>
           <Link to="/sync-dates" className="glow-btn">Sync Product by Dates</Link>
           <a href="https://app.hubspot.com/contacts/49511833/objects/0-7/views/all/list" target="_blank" rel="noopener noreferrer" className="glow-btn">All HS Products</a>
+          <Link to="/history" className="glow-btn">See History</Link>
         </div>
       </div>
     </div>
