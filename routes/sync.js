@@ -12,7 +12,6 @@ import {
   syncProductsByDateRange,
   syncBySkus,
 } from '../services/productSyncService.js';
-import { getSyncHistory } from '../services/syncHistoryService.js';
 
 const router = express.Router();
 
