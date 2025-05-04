@@ -1,3 +1,4 @@
+// This script delete all contacts in a HubSpot account using the HubSpot API.
 import { Client } from "@hubspot/api-client";
 import dotenv from "dotenv";
 import pLimit from "p-limit";
