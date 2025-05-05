@@ -25,6 +25,7 @@
     "@hubspot/api-client": "^12.0.1",
     "@ngrok/ngrok": "^1.4.1",
     "cors": "^2.8.5",
+    "csv-parser": "^3.2.0",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",
@@ -38,6 +39,5 @@
   "directories": {
     "lib": "lib"
   },
-  "devDependencies": {},
   "description": ""
 }
