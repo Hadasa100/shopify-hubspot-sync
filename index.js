@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 
 import webhookRoutes from './routes/webhook.js';
 import syncRoutes from './routes/sync.js';
+import hubspotWebhooksRouter from './routes/hubspotWebhooks.js';
 
 // Create __dirname in ES module context:
 const __filename = fileURLToPath(import.meta.url);
@@ -20,6 +21,7 @@ app.use(express.static(path.join(__dirname, 'frontend', 'build')));
 
 // Routes
 app.use('/webhooks', webhookRoutes);
+app.use('/webhooks', hubspotWebhooksRouter);
 app.use('/sync', syncRoutes);
 
 // Health check
