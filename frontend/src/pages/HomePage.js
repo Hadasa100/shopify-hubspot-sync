@@ -12,10 +12,10 @@ function HomePage() {
       {/* Content */}
       <div className="z-10 text-center px-4 ">
         <h1 className="text-4xl sm:text-5xl md:text-5xl uppercase tracking-widest font-light leading-tight mb-6">
-          Shopify–HubSpot Sync
+          Shopify - HubSpot Sync
         </h1>
         <p className="text-lg text-white/70 mb-12">
-          Sync your Shopify product to HubSpot
+          Sync Shopify product to HubSpot
         </p>
 
         {/* Button Grid */}

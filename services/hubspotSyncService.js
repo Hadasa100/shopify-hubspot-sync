@@ -31,7 +31,7 @@ export async function syncProductPropertyChange({ objectId, propertyName, proper
     await upsertProductMetafield(shopifyGID, namespace, key, propertyValue);
     console.log(`Updated ${namespace}__${key}='${propertyValue}' on ${shopifyGID}`);
     const sku = await getProductSKU(shopifyGID);
-    await sendMetafieldChangeEmail({ sku, key, value: propertyValue });
+    // await sendMetafieldChangeEmail({ sku, key, value: propertyValue });
   } catch (err) {
     console.error('Error processing sync/email:', err);
   }
