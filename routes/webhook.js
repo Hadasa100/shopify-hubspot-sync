@@ -35,6 +35,8 @@ router.post('/product', express.json(), async (req, res) => {
 
   try {
     const failures = [];
+    const gid = `${req.body.id}`;
+    await handleProductSync(gid);
     const result = await createOrUpdateHubSpotProduct(
       req.body,
       logger,
