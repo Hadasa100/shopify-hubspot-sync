@@ -3,6 +3,7 @@ import express from 'express';
 import { createOrUpdateHubSpotProduct, deleteHubSpotProduct } from '../lib/hubspot.js';
 import logger from '../utils/logger.js';
 import { sendSummaryEmail } from '../lib/email.js';
+import { handleProductSync } from '../lib/shopifyStatusSync.js';
 
 const router = express.Router();
 
