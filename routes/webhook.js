@@ -3,7 +3,7 @@ import express from 'express';
 import { createOrUpdateHubSpotProduct, deleteHubSpotProduct } from '../lib/hubspot.js';
 import logger from '../utils/logger.js';
 import { sendSummaryEmail } from '../lib/email.js';
-import { handleProductSync } from '../lib/productSync.js';
+import { handleProductSync, handleProductCreate } from '../lib/productSync.js';
 
 const router = express.Router();
 
@@ -30,9 +30,9 @@ function queueSummaryEmail() {
   }, DEBOUNCE_INTERVAL);
 }
 
-// Webhook for creating/updating a product
-router.post('/product', express.json(), async (req, res) => {
-  console.log('🚀 Webhook received for product create/update');
+// Webhook for updating a product
+router.post('/product/update', express.json(), async (req, res) => {
+  console.log('🚀 Webhook received for product update');
 
   try {
     const failures = [];
@@ -58,6 +58,22 @@ router.post('/product', express.json(), async (req, res) => {
     recentResults.failures.push({ sku: req.body?.variants?.[0]?.sku || 'Unknown', reason: 'Webhook error: ' + error.message });
     queueSummaryEmail();
     res.status(500).send('❌ Error processing product webhook.');
+  }
+});
+
+/**
+ * Webhook for new products
+ */
+router.post('/product/create', express.json(), async (req, res) => {
+  console.log('🚀 Webhook received for product create');
+
+  try {
+    const gid = `${req.body.id}`; 
+    await handleProductCreate(gid);
+    res.status(200).send('✅ Product creation processed.');
+  } catch (error) {
+    console.error('❌ Error processing product create webhook:', error);
+    res.status(500).send('❌ Error processing product create webhook.');
   }
 });
 
